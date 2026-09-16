@@ -1,0 +1,344 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  clearInlineMeasurementCacheForTests,
+  createCanvasTextMeasurer,
+  createInlineMeasurementRoot,
+  createInlineTextMeasurementNode,
+  measureInlineTextWidth,
+  measureInlineTextWidthFast,
+} from "./index";
+
+const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth");
+const originalGetContext = HTMLCanvasElement.prototype.getContext;
+
+afterEach(() => {
+  if (originalOffsetWidth) {
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", originalOffsetWidth);
+  } else {
+    Reflect.deleteProperty(HTMLElement.prototype, "offsetWidth");
+  }
+  HTMLCanvasElement.prototype.getContext = originalGetContext;
+  clearInlineMeasurementCacheForTests();
+  vi.restoreAllMocks();
+});
+
+function stubCanvasMeasurement(widthPerCharacter: number) {
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+    font: "",
+    measureText: (value: string) => ({ width: value.length * widthPerCharacter }),
+  })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+}
+
+describe("inline-measure", () => {
+  it("measures text with a fast canvas path and includes inline chrome", () => {
+    stubCanvasMeasurement(8);
+    const source = document.createElement("span");
+    source.style.paddingLeft = "3px";
+    source.style.paddingRight = "5px";
+    document.body.append(source);
+
+    const width = measureInlineTextWidthFast({
+      sourceElement: source,
+      text: "Asset",
+    });
+
+    expect(width).toBe(48);
+    source.remove();
+  });
+
+  it("applies letter spacing exactly once when the canvas context supports it", () => {
+    const context = {
+      font: "",
+      fontKerning: "normal",
+      fontStretch: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing: "0px",
+      measureText(value: string) {
+        const letterSpacing = Number.parseFloat(this.letterSpacing) || 0;
+        return {
+          width: value.length * 10 + letterSpacing * Math.max(0, Array.from(value).length - 1),
+        };
+      },
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => context,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const source = document.createElement("span");
+    source.style.letterSpacing = "2px";
+    document.body.append(source);
+
+    const width = measureInlineTextWidthFast({
+      sourceElement: source,
+      text: "ABCD",
+    });
+
+    expect(width).toBe(46);
+    source.remove();
+  });
+
+  it("falls back to manual letter spacing when the canvas context does not support it", () => {
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      font: "",
+      measureText: (value: string) => ({ width: value.length * 10 }),
+    })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const measureText = createCanvasTextMeasurer({
+      font: "16px Inter",
+      fontKerning: "normal",
+      fontStretch: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing: "2px",
+    } as CSSStyleDeclaration);
+
+    expect(measureText("ABCD")).toBe(46);
+  });
+
+  it("resets canvas text properties between styled and normal measurements", () => {
+    const context = {
+      font: "",
+      fontKerning: "normal",
+      fontStretch: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing: "0px",
+      measureText(value: string) {
+        const letterSpacing = Number.parseFloat(this.letterSpacing) || 0;
+        return {
+          width: value.length * 10 + letterSpacing * Math.max(0, Array.from(value).length - 1),
+        };
+      },
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => context,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const createMeasureText = (letterSpacing: string) => createCanvasTextMeasurer({
+      font: "16px Inter",
+      fontKerning: "normal",
+      fontStretch: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing,
+    } as CSSStyleDeclaration);
+
+    expect(createMeasureText("2px")("ABCD")).toBe(46);
+    expect(createMeasureText("normal")("ABCD")).toBe(40);
+  });
+
+  it("builds exact DOM text nodes with numeric font features preserved", () => {
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    source.style.fontFeatureSettings = "\"tnum\" 1";
+    document.body.append(source);
+
+    const node = createInlineTextMeasurementNode({
+      sourceElement: source,
+      text: "271.3 KB",
+    });
+
+    expect(node.style.fontVariantNumeric).toBe("tabular-nums");
+    expect(node.style.fontFeatureSettings).toContain("tnum");
+    source.remove();
+  });
+
+  it("uses the exact DOM path when requested", () => {
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 11;
+      },
+    });
+
+    const source = document.createElement("span");
+    document.body.append(source);
+
+    const width = measureInlineTextWidth({
+      accuracy: "exact",
+      sourceElement: source,
+      text: "Folder",
+    });
+
+    expect(width).toBe(66);
+    source.remove();
+  });
+
+  it("keeps exact measurement aligned when tabular numeric style empties the font shorthand", () => {
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        const hasExpectedFontLonghands = this.style.fontFamily.includes("Inter")
+          && this.style.fontSize === "14px"
+          && this.style.fontWeight === "400";
+        const widthPerGlyph = hasExpectedFontLonghands ? 8 : 9;
+        return (this.textContent?.length ?? 0) * widthPerGlyph;
+      },
+    });
+
+    const source = document.createElement("span");
+    source.className = "tabular-nums";
+    source.style.fontFamily = "Inter, sans-serif";
+    source.style.fontSize = "14px";
+    source.style.fontVariantNumeric = "tabular-nums";
+    source.style.fontWeight = "400";
+    document.body.append(source);
+
+    const width = measureInlineTextWidth({
+      accuracy: "exact",
+      sourceElement: source,
+      text: "0000-00-00, 00:00:00",
+    });
+
+    expect(width).toBe(Array.from("0000-00-00, 00:00:00").length * 8);
+    source.remove();
+  });
+
+  it("uses calibrated glyph widths for tabular auto measurement", () => {
+    stubCanvasMeasurement(5);
+    let widthReads = 0;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        widthReads += 1;
+        return (this.textContent?.length ?? 0) * 7;
+      },
+    });
+
+    const source = document.createElement("span");
+    source.className = "tabular-nums";
+    document.body.append(source);
+
+    const width = measureInlineTextWidth({
+      accuracy: "auto",
+      sourceElement: source,
+      text: "A12",
+    });
+
+    expect(width).toBe(21);
+    expect(widthReads).toBe(3);
+    source.remove();
+  });
+
+  it("reuses tabular glyph calibration for the same style", () => {
+    stubCanvasMeasurement(5);
+    let widthReads = 0;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        widthReads += 1;
+        return (this.textContent?.length ?? 0) * 7;
+      },
+    });
+
+    const source = document.createElement("span");
+    source.className = "tabular-nums";
+    document.body.append(source);
+
+    measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "B34" });
+    measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "4B3" });
+
+    expect(widthReads).toBe(3);
+    source.remove();
+  });
+
+  it("keeps tabular glyph calibration separate across font loading states", () => {
+    stubCanvasMeasurement(5);
+    const originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
+    const fonts = { status: "loading" };
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: fonts,
+    });
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        const widthPerGlyph = fonts.status === "loaded" ? 9 : 7;
+        return (this.textContent?.length ?? 0) * widthPerGlyph;
+      },
+    });
+
+    const source = document.createElement("span");
+    source.className = "tabular-nums";
+    document.body.append(source);
+
+    try {
+      expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "12" })).toBe(14);
+
+      fonts.status = "loaded";
+
+      expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "12" })).toBe(18);
+    } finally {
+      source.remove();
+      if (originalFonts) {
+        Object.defineProperty(document, "fonts", originalFonts);
+      } else {
+        Reflect.deleteProperty(document, "fonts");
+      }
+    }
+  });
+
+  it("resets font stretch instead of assigning unsupported percentage values", () => {
+    const fontStretchSetter = vi.fn();
+    const context = {
+      font: "",
+      fontKerning: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing: "normal",
+      measureText: (value: string) => ({ width: value.length * 8 }),
+    };
+    Object.defineProperty(context, "fontStretch", {
+      configurable: true,
+      set: fontStretchSetter,
+    });
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => context,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+
+    const measureText = createCanvasTextMeasurer({
+      font: "16px Inter",
+      fontKerning: "normal",
+      fontStretch: "100%",
+      fontVariantCaps: "normal",
+      letterSpacing: "normal",
+    } as CSSStyleDeclaration);
+
+    expect(measureText("Asset")).toBe(40);
+    expect(fontStretchSetter).toHaveBeenCalledOnce();
+    expect(fontStretchSetter).toHaveBeenCalledWith("normal");
+    expect(fontStretchSetter).not.toHaveBeenCalledWith("100%");
+  });
+
+  it("builds a canvas font from computed parts when the shorthand is empty", () => {
+    const context = {
+      font: "",
+      fontKerning: "normal",
+      fontStretch: "normal",
+      fontVariantCaps: "normal",
+      letterSpacing: "normal",
+      measureText: (value: string) => ({ width: value.length * 8 }),
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => context,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+
+    const measureText = createCanvasTextMeasurer({
+      font: "",
+      fontFamily: "Inter, sans-serif",
+      fontSize: "14px",
+      fontStretch: "100%",
+      fontStyle: "normal",
+      fontVariant: "normal",
+      fontKerning: "normal",
+      fontVariantCaps: "normal",
+      fontWeight: "500",
+      letterSpacing: "normal",
+    } as CSSStyleDeclaration);
+
+    measureText("Folder");
+
+    expect(context.font).toBe("500 14px Inter, sans-serif");
+  });
+
+  it("creates offscreen roots for batched exact measurement", () => {
+    const root = createInlineMeasurementRoot();
+
+    expect(root.style.position).toBe("absolute");
+    expect(root.style.visibility).toBe("hidden");
+    expect(root.style.pointerEvents).toBe("none");
+  });
+});

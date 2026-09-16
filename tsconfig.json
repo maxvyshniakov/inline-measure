@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "incremental": false,
+    "noEmit": true,
+    "types": [
+      "vite/client",
+      "node",
+      "vitest/globals"
+    ],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2023"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": []
+}
