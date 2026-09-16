@@ -1,5 +1,7 @@
 # @skipstery/inline-measure
 
+The package is currently private. See the [standalone quick start](../../docs/GETTING_STARTED.md) for local archive installation.
+
 Browser text measurement without React or design-system dependencies.
 
 ```ts
