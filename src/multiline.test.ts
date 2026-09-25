@@ -255,7 +255,7 @@ describe("measureInlineTextMultilineWidth", () => {
     stubCanvasMeasurement((value) => Array.from(value).length);
     const source = createSource();
     const readRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 8 } as DOMRect;
         }
@@ -283,7 +283,7 @@ describe("measureInlineTextMultilineWidth", () => {
     stubCanvasMeasurement((value) => Array.from(value).length);
     const source = createSource();
     const readRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 16 } as DOMRect;
         }
@@ -308,7 +308,7 @@ describe("measureInlineTextMultilineWidth", () => {
     stubCanvasMeasurement((value) => Array.from(value).length);
     const source = createSource();
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 12 } as DOMRect;
         }
@@ -317,7 +317,7 @@ describe("measureInlineTextMultilineWidth", () => {
         return { height: lines * 10, width } as DOMRect;
       });
     vi.spyOn(HTMLElement.prototype, "scrollWidth", "get")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") return 12;
         return Math.max(
           ...Array.from(this.textContent?.split(" ") ?? [], (word) => word.length * 2),
@@ -337,7 +337,7 @@ describe("measureInlineTextMultilineWidth", () => {
     stubCanvasMeasurement((value) => Array.from(value).length);
     const source = createSource();
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 100.4 } as DOMRect;
         }
@@ -377,7 +377,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const source = createSource();
     const probeTexts: string[] = [];
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 8 } as DOMRect;
         }
@@ -405,7 +405,7 @@ describe("measureInlineTextMultilineWidth", () => {
     source.style.wordSpacing = "3px";
     const probeWordSpacings: string[] = [];
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function () {
+      .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal") {
           return { width: 8 } as DOMRect;
         }
