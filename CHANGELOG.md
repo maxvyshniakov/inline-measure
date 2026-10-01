@@ -4,6 +4,12 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Changed
+
+- `linebreak` is a caret range (`^1.1.0`) instead of an exact version, so an
+  app that also depends on it can share one copy with Inline Measure. The
+  range starts at the version Inline Measure is tested with.
+
 ## 0.1.1 - 2026-10-01
 
 ### Changed
