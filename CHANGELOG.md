@@ -4,6 +4,12 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Changed
+
+- The README documents the default `auto` accuracy and each method, that
+  measured widths include the element's horizontal padding and border, and the
+  `/multiline` entrypoint.
+
 ## 0.1.2 - 2026-10-02
 
 ### Changed

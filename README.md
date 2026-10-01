@@ -4,10 +4,27 @@ Browser text measurement without React or design-system dependencies.
 
 ```ts
 import { measureInlineTextWidth } from "@skipstery/inline-measure";
-const width = measureInlineTextWidth({ sourceElement: element, text: "Hello", accuracy: "exact" });
+
+await document.fonts.ready;
+const width = measureInlineTextWidth({ sourceElement: element, text: "Hello" });
 ```
 
-Measure after fonts are ready. `exact` uses a hidden DOM node, `fast` uses canvas, and `auto` handles tabular numeric text with calibration. DOM-based methods require a browser. The `/multiline` entrypoint exposes line measurement utilities.
+`measureInlineTextWidth` returns the width in pixels that `text` would take
+inside `sourceElement`: its font and text styles, plus its horizontal padding
+and border. Measure after fonts are ready. `accuracy` picks the method:
+
+- `"auto"` (default) measures with canvas and calibrates tabular numerals
+  against the DOM.
+- `"fast"` measures with canvas only.
+- `"exact"` lays out a hidden node styled like the element, which costs a reflow.
+
+The DOM-based methods need a browser. `measureInlineElementWidth` reads an
+element's rendered width, and `createCanvasTextMeasurer` returns a reusable
+`(text) => width` function for a font or computed style.
+
+The `@skipstery/inline-measure/multiline` entrypoint measures wrapped text:
+`measureInlineTextMultilineWidth` returns the narrowest width at which `text`
+fits in `lines` lines, using the same `accuracy` options.
 
 ## Install
 
