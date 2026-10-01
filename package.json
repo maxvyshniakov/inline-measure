@@ -1,8 +1,8 @@
 {
   "name": "@skipstery/inline-measure",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "description": "Browser text measurement without React or design-system dependencies.",
   "files": [
     "dist",
     "LICENSE"
@@ -18,25 +18,32 @@
     }
   },
   "scripts": {
+    "prepare": "node scripts/install-git-hooks.mjs",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "bun run build",
+    "verify": "node scripts/verify.mjs",
+    "release": "node scripts/release.mjs",
+    "release:publish": "node scripts/publish.mjs",
+    "check:changelogs": "node scripts/check-changelogs.mjs",
+    "check:consumer": "node scripts/check-packed-consumer.mjs",
+    "lint": "oxlint --config .oxlintrc.json --max-warnings=0 src scripts",
+    "test": "node --test scripts/test-scripts.mjs && vitest --config vitest.config.ts run",
     "typecheck": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
-    "typecheck:fast": "tsc --noEmit -p tsconfig.build.json",
-    "test": "vitest --config vitest.config.ts run",
-    "test:run": "vitest --config vitest.config.ts run src"
+    "typecheck:fast": "tsc --noEmit -p tsconfig.build.json"
   },
   "devDependencies": {
-    "@types/node": "26.3.0",
-    "happy-dom": "20.11.6",
-    "typescript": "7.0.2",
-    "vitest": "4.1.11",
-    "vite": "8.2.2",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "26.3.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
-    "@testing-library/react": "16.3.2",
-    "@vitejs/plugin-react": "6.1.0"
+    "@vitejs/plugin-react": "6.1.0",
+    "happy-dom": "20.11.6",
+    "oxlint": "1.80.0",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
   },
   "dependencies": {
     "linebreak": "1.1.0"
@@ -44,7 +51,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skipstery/ui.git",
-    "directory": "packages/inline-measure"
+    "url": "git+https://github.com/skipstery/inline-measure.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   }
 }
