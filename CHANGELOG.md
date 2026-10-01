@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.1.2 - 2026-10-02
+
 ### Changed
 
 - `linebreak` is a caret range (`^1.1.0`) instead of an exact version, so an
