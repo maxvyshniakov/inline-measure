@@ -23,6 +23,19 @@ export function publishBlockers({ token, branch, dirty, head, upstream, issues, 
   return blockers;
 }
 
+export function registryUrl(name) {
+  return `https://npm.pkg.github.com/${name.replace("/", "%2f")}`;
+}
+
+// Tag only what the registry actually serves: a misconfigured `bun publish`
+// can exit 0 without publishing anything.
+async function registryHasVersion(name, version, token) {
+  const response = await fetch(registryUrl(name), { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) return false;
+  const metadata = await response.json();
+  return Boolean(metadata.versions?.[version]);
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const pkg = rootPackage();
   const tag = `v${pkg.version}`;
@@ -44,6 +57,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   // prepack builds dist; bunfig.toml supplies the registry and token.
   execFileSync("bun", ["publish"], { cwd: repositoryRoot, stdio: "inherit" });
+  if (!(await registryHasVersion(pkg.name, pkg.version, process.env.GITHUB_TOKEN))) {
+    console.error(`bun publish exited cleanly, but ${registryUrl(pkg.name)} does not serve ${pkg.version}; not tagging.`);
+    process.exit(1);
+  }
   git("tag", "--annotate", tag, "--message", `${pkg.name} ${pkg.version}`);
   git("push", "origin", tag);
   console.log(`Published ${pkg.name}@${pkg.version} and pushed ${tag}.`);

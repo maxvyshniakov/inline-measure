@@ -5,7 +5,7 @@ import test from "node:test";
 import { changelogIssues, rootPackage } from "./check-changelogs.mjs";
 import { nextVersion, parseChangelog } from "./lib/changelog.mjs";
 import { commitsToVerify } from "./pre-push.mjs";
-import { publishBlockers } from "./publish.mjs";
+import { publishBlockers, registryUrl } from "./publish.mjs";
 import { cutRelease } from "./release.mjs";
 import { verifySteps } from "./verify.mjs";
 
@@ -52,6 +52,10 @@ test("publishing requires a token, a clean pushed main, a released changelog and
   assert.match(publishBlockers({ ...ready, dirty: true }).join("\n"), /uncommitted changes/);
   assert.match(publishBlockers({ ...ready, upstream: "b" }).join("\n"), /push the release commit first/);
   assert.match(publishBlockers({ ...ready, tagExists: true }).join("\n"), /v0.2.0 already exists/);
+});
+
+test("the registry check reads the scoped package from GitHub Packages", () => {
+  assert.equal(registryUrl("@skipstery/inline-measure"), "https://npm.pkg.github.com/@skipstery%2finline-measure");
 });
 
 test("verify runs CI's steps, and CI runs verify --release", () => {
