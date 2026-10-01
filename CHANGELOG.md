@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.1.3 - 2026-10-02
+
 ### Changed
 
 - The README documents the default `auto` accuracy and each method, that
