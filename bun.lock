@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@skipstery/inline-measure",
+      "name": "@maxvyshniakov/inline-measure",
       "dependencies": {
         "linebreak": "^1.1.0",
       },

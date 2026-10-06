@@ -1,8 +1,14 @@
-# @skipstery/inline-measure Changelog
+# @maxvyshniakov/inline-measure Changelog
 
 Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
+
+## 0.2.0 - 2026-10-06
+
+### Breaking
+
+- Breaking: publish as `@maxvyshniakov/inline-measure` after the GitHub account rename. Replace the old package scope in imports and registry configuration.
 
 ## 0.1.3 - 2026-10-02
 
@@ -25,7 +31,7 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 ### Changed
 
 - Published to the private GitHub Packages registry from its own repository,
-  github.com/skipstery/inline-measure. Install it by version instead of from a
+  github.com/maxvyshniakov/inline-measure. Install it by version instead of from a
   local archive; see the README.
 
 ## 0.1.0 - 2026-09-17

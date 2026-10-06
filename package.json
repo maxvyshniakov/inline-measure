@@ -1,6 +1,6 @@
 {
-  "name": "@skipstery/inline-measure",
-  "version": "0.1.3",
+  "name": "@maxvyshniakov/inline-measure",
+  "version": "0.2.0",
   "type": "module",
   "description": "Browser text measurement without React or design-system dependencies.",
   "files": [
@@ -45,7 +45,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skipstery/inline-measure.git"
+    "url": "git+https://github.com/maxvyshniakov/inline-measure.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"

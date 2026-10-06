@@ -1,9 +1,9 @@
-# @skipstery/inline-measure
+# @maxvyshniakov/inline-measure
 
 Browser text measurement without React or design-system dependencies.
 
 ```ts
-import { measureInlineTextWidth } from "@skipstery/inline-measure";
+import { measureInlineTextWidth } from "@maxvyshniakov/inline-measure";
 
 await document.fonts.ready;
 const width = measureInlineTextWidth({ sourceElement: element, text: "Hello" });
@@ -22,19 +22,19 @@ The DOM-based methods need a browser. `measureInlineElementWidth` reads an
 element's rendered width, and `createCanvasTextMeasurer` returns a reusable
 `(text) => width` function for a font or computed style.
 
-The `@skipstery/inline-measure/multiline` entrypoint measures wrapped text:
+The `@maxvyshniakov/inline-measure/multiline` entrypoint measures wrapped text:
 `measureInlineTextMultilineWidth` returns the narrowest width at which `text`
 fits in `lines` lines, using the same `accuracy` options.
 
 ## Install
 
 The package is private and lives in GitHub Packages. Point bun at the registry
-for the `@skipstery` scope:
+for the `@maxvyshniakov` scope:
 
 ```toml
 # bunfig.toml
 [install.scopes]
-skipstery = { url = "https://npm.pkg.github.com/", token = "$GITHUB_TOKEN" }
+maxvyshniakov = { url = "https://npm.pkg.github.com/", token = "$GITHUB_TOKEN" }
 ```
 
 Then install with a token that has `read:packages`
@@ -42,7 +42,7 @@ Then install with a token that has `read:packages`
 
 ```sh
 export GITHUB_TOKEN=$(gh auth token)
-bun add @skipstery/inline-measure
+bun add @maxvyshniakov/inline-measure
 ```
 
 Inline Measure needs no React, CSS or Tailwind setup.
