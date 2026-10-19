@@ -4,6 +4,17 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.2.1 - 2026-10-19
+
+### Fixed
+
+- `auto` accuracy no longer under-measures tabular-number text that contains
+  spaces or other whitespace, such as `78 × 79 × 76 cm`; each space used to
+  count as 0px. `exact` accuracy also measures whitespace-only text, and the
+  node from `createInlineTextMeasurementNode` (styled by
+  `copyInlineTextMeasurementStyles`) is now `display: inline-block` instead of
+  `inline-flex`.
+
 ## 0.2.0 - 2026-10-06
 
 ### Breaking

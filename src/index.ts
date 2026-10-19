@@ -292,8 +292,9 @@ export function copyInlineTextMeasurementStyles(
     width: "max-content",
     minWidth: "0",
     maxWidth: "none",
-    display: "inline-flex",
-    alignItems: "center",
+    // Not inline-flex: a flex container drops a whitespace-only text run, so a
+    // space glyph or a whitespace-only string would measure 0px.
+    display: "inline-block",
     boxSizing: "border-box",
     whiteSpace: "pre",
   });

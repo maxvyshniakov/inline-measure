@@ -214,6 +214,28 @@ describe("inline-measure", () => {
     source.remove();
   });
 
+  it("calibrates whitespace glyphs at their advance width for tabular auto measurement", () => {
+    stubCanvasMeasurement(5);
+    // A flex container drops a whitespace-only text run, so a space measured
+    // on its own in an inline-flex node reads as 0px in browsers.
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        const text = this.textContent ?? "";
+        if (this.style.display.includes("flex") && /^\s+$/.test(text)) return 0;
+        return text.length * 7;
+      },
+    });
+
+    const source = document.createElement("span");
+    source.className = "tabular-nums";
+    document.body.append(source);
+
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "78 × 79" })).toBe(49);
+    expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: " " })).toBe(7);
+    source.remove();
+  });
+
   it("reuses tabular glyph calibration for the same style", () => {
     stubCanvasMeasurement(5);
     let widthReads = 0;
