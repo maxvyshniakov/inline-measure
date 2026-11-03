@@ -1,10 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  applyInlineMeasurementStyles,
+  copyInlineTextMeasurementStyles,
   createCanvasTextMeasurer,
   createInlineMeasurementRoot,
   createInlineTextMeasurementNode,
+  getHorizontalBoxWidth,
+  INLINE_MEASUREMENT_ROOT_STYLES,
+  measureInlineElementWidth,
   measureInlineTextWidth,
+  measureInlineTextWidthAuto,
+  measureInlineTextWidthExact,
   measureInlineTextWidthFast,
+  parseCssPixelValue,
 } from "./index";
 import { clearInlineMeasurementCacheForTests } from "./testing";
 
@@ -362,5 +370,123 @@ describe("inline-measure", () => {
     expect(root.style.position).toBe("absolute");
     expect(root.style.visibility).toBe("hidden");
     expect(root.style.pointerEvents).toBe("none");
+  });
+});
+
+describe("inline-measure exports", () => {
+  it("parses CSS pixel values and reads anything unparseable as 0", () => {
+    expect(parseCssPixelValue("12.5px")).toBe(12.5);
+    expect(parseCssPixelValue("-2px")).toBe(-2);
+    expect(parseCssPixelValue("0")).toBe(0);
+    expect(parseCssPixelValue("normal")).toBe(0);
+    expect(parseCssPixelValue("")).toBe(0);
+  });
+
+  it("sums horizontal padding and border, ignoring the vertical ones", () => {
+    const source = document.createElement("span");
+    source.style.padding = "40px 5px 40px 3px";
+    source.style.borderStyle = "solid";
+    source.style.borderWidth = "40px 2px 40px 1px";
+    document.body.append(source);
+
+    expect(getHorizontalBoxWidth(source)).toBe(11);
+    source.remove();
+  });
+
+  it("reads an element's rendered width, fractions included", () => {
+    const element = document.createElement("span");
+    vi.spyOn(element, "getBoundingClientRect").mockReturnValue({ width: 123.5 } as DOMRect);
+
+    expect(measureInlineElementWidth(element)).toBe(123.5);
+  });
+
+  it("applies the defined styles and leaves undefined ones untouched", () => {
+    const element = document.createElement("div");
+    element.style.fontFamily = "Inter";
+
+    // "undefined" would be a valid font family name, so skipping must be explicit.
+    applyInlineMeasurementStyles(element, { position: "absolute", fontFamily: undefined });
+
+    expect(element.style.position).toBe("absolute");
+    expect(element.style.fontFamily).toBe("Inter");
+  });
+
+  it("styles measurement roots with the exported root styles", () => {
+    const hostRoot = document.createElement("div");
+    applyInlineMeasurementStyles(hostRoot, INLINE_MEASUREMENT_ROOT_STYLES);
+
+    expect(createInlineMeasurementRoot().style.cssText).toBe(hostRoot.style.cssText);
+  });
+
+  it("copies the source's text and inline box styles onto an inline-block, unwrapped target", () => {
+    const source = document.createElement("span");
+    source.style.fontSize = "13px";
+    source.style.letterSpacing = "1px";
+    source.style.textTransform = "uppercase";
+    source.style.paddingLeft = "4px";
+    source.style.width = "300px";
+    source.style.display = "flex";
+    document.body.append(source);
+    const target = document.createElement("span");
+
+    copyInlineTextMeasurementStyles(target, source);
+
+    // Not inline-flex: a flex container drops a whitespace-only text run (0.2.1).
+    expect(target.style.display).toBe("inline-block");
+    expect(target.style.whiteSpace).toBe("pre");
+    expect(target.style.width).toBe("max-content");
+    expect(target.style.maxWidth).toBe("none");
+    expect(target.style.boxSizing).toBe("border-box");
+    expect(target.style.fontSize).toBe("13px");
+    expect(target.style.letterSpacing).toBe("1px");
+    expect(target.style.textTransform).toBe("uppercase");
+    expect(target.style.paddingLeft).toBe("4px");
+    source.remove();
+  });
+
+  it("measures exact width from a styled DOM node and removes it afterwards", () => {
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "0");
+      },
+    });
+    const source = document.createElement("span");
+    source.style.fontSize = "12px";
+    document.body.append(source);
+    const bodyChildren = document.body.childElementCount;
+
+    expect(measureInlineTextWidthExact({ sourceElement: source, text: "Folder" })).toBe(72);
+    expect(document.body.childElementCount).toBe(bodyChildren);
+    source.remove();
+  });
+
+  it("measures non-tabular text with canvas only in auto accuracy", () => {
+    stubCanvasMeasurement(8);
+    const offsetWidth = vi.fn(() => 999);
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true, get: offsetWidth });
+    const source = document.createElement("span");
+    source.style.paddingRight = "2px";
+    document.body.append(source);
+
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "Asset" })).toBe(42);
+    expect(offsetWidth).not.toHaveBeenCalled();
+    source.remove();
+  });
+
+  it("calibrates tabular numerals set by computed style, not only by class, in auto accuracy", () => {
+    stubCanvasMeasurement(5);
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 7;
+      },
+    });
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    document.body.append(source);
+
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "123" })).toBe(21);
+    source.remove();
   });
 });
