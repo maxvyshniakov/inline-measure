@@ -39,7 +39,7 @@
     "typecheck:fast": "tsc --noEmit -p tsconfig.build.json"
   },
   "devDependencies": {
-    "@maxvyshniakov/repo-kit": "0.2.1",
+    "@maxvyshniakov/repo-kit": "0.2.2",
     "@types/node": "26.6.3",
     "happy-dom": "20.14.5",
     "oxlint": "1.86.0",

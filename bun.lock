@@ -8,7 +8,7 @@
         "linebreak": "^1.1.0",
       },
       "devDependencies": {
-        "@maxvyshniakov/repo-kit": "0.2.1",
+        "@maxvyshniakov/repo-kit": "0.2.2",
         "@types/node": "26.6.3",
         "happy-dom": "20.14.5",
         "oxlint": "1.86.0",
@@ -25,7 +25,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@maxvyshniakov/repo-kit": ["@maxvyshniakov/repo-kit@0.2.1", "https://npm.pkg.github.com/download/@maxvyshniakov/repo-kit/0.2.1/e8b84eab25f0af7f86d0e6f996c6d533a0e22f5b", { "bin": { "repo-kit": "src/cli.mjs" } }, "sha512-rpq5rgXTj4VJ7dT1vuqSyN/uUAj5g7Noe+/zNpVyVKiyy8Ww5d7hiQrZGmWUeX9zbQoGx2jC5oQsIchVd63ccw=="],
+    "@maxvyshniakov/repo-kit": ["@maxvyshniakov/repo-kit@0.2.2", "https://npm.pkg.github.com/download/@maxvyshniakov/repo-kit/0.2.2/8ee4ae7e0d18606e0e3a12553f0d3fcf7deef09b", { "bin": { "repo-kit": "src/cli.mjs" } }, "sha512-W5imVNro+zGp8v7G+0IpK+CMyxsbDvfZj/IAlXa6eMHVZa+8OkTnqNA8ZKMaVIRHxzHq/z34axUHWtfmbGVCnA=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.152.0", "", {}, "sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw=="],
 
