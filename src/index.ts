@@ -1,4 +1,8 @@
-import { applyTextTransform, getHorizontalBoxWidthFromComputed } from "./internal.js";
+import {
+  applyTextTransform,
+  getHorizontalBoxWidthFromComputed,
+  tabularGlyphMeasurementCache,
+} from "./internal.js";
 
 export type InlineMeasureAccuracy = "auto" | "fast" | "exact";
 
@@ -47,11 +51,6 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
 ] as const satisfies ReadonlyArray<keyof CSSStyleDeclaration>;
 
 let measurementCanvas: HTMLCanvasElement | null = null;
-const tabularGlyphMeasurementCache = new Map<string, Map<string, number>>();
-
-export function clearInlineMeasurementCacheForTests() {
-  tabularGlyphMeasurementCache.clear();
-}
 
 export function applyInlineMeasurementStyles(
   element: HTMLElement,

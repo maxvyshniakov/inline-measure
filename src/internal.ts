@@ -1,3 +1,8 @@
+// Tabular glyph widths calibrated against the DOM, keyed by text style
+// signature. It lives here, outside the public entrypoints, so that the root
+// entrypoint and `./testing` share one cache.
+export const tabularGlyphMeasurementCache = new Map<string, Map<string, number>>();
+
 function parseCssPixelValue(value: string) {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;

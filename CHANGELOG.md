@@ -4,6 +4,13 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Breaking
+
+- Breaking: `clearInlineMeasurementCacheForTests` moved from the root entrypoint
+  to the new `@maxvyshniakov/inline-measure/testing` entrypoint, so the root
+  API no longer carries a test-only hook. Import it from
+  `@maxvyshniakov/inline-measure/testing` in tests that fake layout.
+
 ## 0.2.1 - 2026-10-19
 
 ### Fixed

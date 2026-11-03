@@ -26,6 +26,10 @@ The `@maxvyshniakov/inline-measure/multiline` entrypoint measures wrapped text:
 `measureInlineTextMultilineWidth` returns the narrowest width at which `text`
 fits in `lines` lines, using the same `accuracy` options.
 
+The `@maxvyshniakov/inline-measure/testing` entrypoint is for tests that fake
+layout: `clearInlineMeasurementCacheForTests` forgets the tabular glyph widths
+that `auto` accuracy calibrated against the DOM.
+
 ## Install
 
 The package is private and lives in GitHub Packages. Point bun at the registry

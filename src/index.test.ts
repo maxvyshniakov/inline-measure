@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  clearInlineMeasurementCacheForTests,
   createCanvasTextMeasurer,
   createInlineMeasurementRoot,
   createInlineTextMeasurementNode,
   measureInlineTextWidth,
   measureInlineTextWidthFast,
 } from "./index";
+import { clearInlineMeasurementCacheForTests } from "./testing";
 
 const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth");
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
