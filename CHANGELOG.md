@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.3.1 - 2026-11-05
+
 ### Changed
 
 - Repeated Canvas measurements reuse unchanged font and text settings. Multiline
