@@ -1,0 +1,1990 @@
+{
+  "schemaVersion": 1,
+  "revision": "6197258c7b25c97c4941d4517300cb7098995166",
+  "sourceSha256": "46fc29a2c26fb15406f557fa2a5631001d2778d5023ea3c8080379978b488444",
+  "harnessSha256": "e98a8a77edf3aeb7699fa2f17d7f8a7c99a4806fb1ce4e98b661e244d560c927",
+  "fontPath": "/Users/maxwish/sid-kit/packages/sid-kit/src/styles/fonts/InterVariable.woff2",
+  "fontSha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
+  "reports": [
+    {
+      "browser": {
+        "name": "chromium",
+        "version": "156.0.8078.4"
+      },
+      "cases": [
+        {
+          "id": "badge-md",
+          "text": "In progress",
+          "style": "",
+          "native": 74.59375,
+          "fast": 74.58238220214844,
+          "exact": 75,
+          "auto": 74.58238220214844,
+          "errorPx": -0.0113677978515625,
+          "exactErrorPx": 0.40625,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-sm",
+          "text": "Archived",
+          "style": "font-size:11px;padding-inline:3px",
+          "native": 54.953125,
+          "fast": 54.94853210449219,
+          "exact": 55,
+          "auto": 54.94853210449219,
+          "errorPx": -0.0045928955078125,
+          "exactErrorPx": 0.046875,
+          "computed": {
+            "font": "500 11px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-lg",
+          "text": "Published",
+          "style": "font-size:14px;padding-inline:6px",
+          "native": 79.96875,
+          "fast": 79.96109008789062,
+          "exact": 80,
+          "auto": 79.96109008789062,
+          "errorPx": -0.007659912109375,
+          "exactErrorPx": 0.03125,
+          "computed": {
+            "font": "500 14px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "6px",
+            "paddingRight": "6px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "weight-700",
+          "text": "In progress",
+          "style": "font-weight:700",
+          "native": 75.96875,
+          "fast": 75.96607971191406,
+          "exact": 76,
+          "auto": 75.96607971191406,
+          "errorPx": -0.0026702880859375,
+          "exactErrorPx": 0.03125,
+          "computed": {
+            "font": "700 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "700",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "letter-spacing",
+          "text": "Archived",
+          "style": "letter-spacing:1.5px",
+          "native": 73.21875,
+          "fast": 73.216552734375,
+          "exact": 73,
+          "auto": 73.216552734375,
+          "errorPx": -0.002197265625,
+          "exactErrorPx": -0.21875,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "1.5px",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "word-spacing",
+          "text": "In progress now",
+          "style": "word-spacing:3px",
+          "limitation": true,
+          "native": 108,
+          "fast": 101.9947509765625,
+          "exact": 108,
+          "auto": 101.9947509765625,
+          "errorPx": -6.0052490234375,
+          "exactErrorPx": 0,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "3px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "optical-none",
+          "text": "In progress",
+          "style": "font-size:32px;font-optical-sizing:none",
+          "limitation": true,
+          "native": 182.234375,
+          "fast": 167.98165893554688,
+          "exact": 182,
+          "auto": 167.98165893554688,
+          "errorPx": -14.252716064453125,
+          "exactErrorPx": -0.234375,
+          "computed": {
+            "font": "",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "none",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-weight",
+          "text": "In progress",
+          "style": "font-variation-settings:\"wght\" 850",
+          "limitation": true,
+          "native": 77.28125,
+          "fast": 74.58238220214844,
+          "exact": 77,
+          "auto": 74.58238220214844,
+          "errorPx": -2.6988677978515625,
+          "exactErrorPx": -0.28125,
+          "computed": {
+            "font": "",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"wght\" 850",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-optical",
+          "text": "In progress",
+          "style": "font-variation-settings:\"opsz\" 32",
+          "limitation": true,
+          "native": 69.25,
+          "fast": 74.58238220214844,
+          "exact": 69,
+          "auto": 74.58238220214844,
+          "errorPx": 5.3323822021484375,
+          "exactErrorPx": -0.25,
+          "computed": {
+            "font": "",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"opsz\" 32",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "tabular",
+          "text": "1111 7777",
+          "style": "font-variant-numeric:tabular-nums",
+          "limitation": true,
+          "native": 75.40625,
+          "fast": 61.22955322265625,
+          "exact": 75,
+          "auto": 75.484375,
+          "errorPx": -14.17669677734375,
+          "exactErrorPx": -0.40625,
+          "computed": {
+            "font": "",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "features",
+          "text": "1111 7777",
+          "style": "font-feature-settings:\"tnum\" 1",
+          "limitation": true,
+          "native": 75.40625,
+          "fast": 61.22955322265625,
+          "exact": 75,
+          "auto": 75.484375,
+          "errorPx": -14.17669677734375,
+          "exactErrorPx": -0.40625,
+          "computed": {
+            "font": "",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "\"tnum\"",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "icon",
+          "text": "Published",
+          "style": "padding-inline:3px",
+          "icon": true,
+          "limitation": true,
+          "native": 82.546875,
+          "fast": 64.53802490234375,
+          "exact": 65,
+          "auto": 64.53802490234375,
+          "composed": 82.53802490234375,
+          "errorPx": -18.00885009765625,
+          "exactErrorPx": -17.546875,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "nested-weight",
+          "text": "Published",
+          "style": "",
+          "nested": true,
+          "limitation": true,
+          "native": 68.234375,
+          "fast": 66.53802490234375,
+          "exact": 67,
+          "auto": 66.53802490234375,
+          "errorPx": -1.69635009765625,
+          "exactErrorPx": -1.234375,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "minimum",
+          "text": "1",
+          "style": "min-width:20px",
+          "limitation": true,
+          "native": 20,
+          "fast": 14.978927612304688,
+          "exact": 15,
+          "auto": 14.978927612304688,
+          "errorPx": -5.0210723876953125,
+          "exactErrorPx": -5,
+          "computed": {
+            "font": "500 12px \"Box Inter\"",
+            "fontFamily": "\"Box Inter\"",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-group-two",
+          "labels": [
+            "Draft",
+            "Published"
+          ],
+          "gap": 4,
+          "native": 116.828125,
+          "fast": 116.80442810058594,
+          "errorPx": -0.0236968994140625,
+          "constants": 12,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 38.26640319824219,
+              "minimum": 0,
+              "width": 38.26640319824219,
+              "native": 38.28125
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-repeated",
+          "labels": [
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published"
+          ],
+          "gap": 8,
+          "native": 596.375,
+          "fast": 596.30419921875,
+          "errorPx": -0.07080078125,
+          "constants": 64,
+          "pieces": [
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 7,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-distinct",
+          "labels": [
+            "Design",
+            "Review",
+            "Approved",
+            "Archived",
+            "Draft",
+            "Blocked",
+            "Ready",
+            "Published"
+          ],
+          "gap": 6,
+          "native": 484.984375,
+          "fast": 484.8911895751953,
+          "errorPx": -0.0931854248046875,
+          "constants": 50,
+          "pieces": [
+            {
+              "text": "Design",
+              "raw": 49.844512939453125,
+              "minimum": 0,
+              "width": 49.844512939453125,
+              "native": 49.859375
+            },
+            {
+              "text": "Review",
+              "raw": 51.14070129394531,
+              "minimum": 0,
+              "width": 51.14070129394531,
+              "native": 51.15625
+            },
+            {
+              "text": "Approved",
+              "raw": 65.90992736816406,
+              "minimum": 0,
+              "width": 65.90992736816406,
+              "native": 65.921875
+            },
+            {
+              "text": "Archived",
+              "raw": 61.216552734375,
+              "minimum": 0,
+              "width": 61.216552734375,
+              "native": 61.21875
+            },
+            {
+              "text": "Draft",
+              "raw": 38.26640319824219,
+              "minimum": 0,
+              "width": 38.26640319824219,
+              "native": 38.28125
+            },
+            {
+              "text": "Blocked",
+              "raw": 55.984405517578125,
+              "minimum": 0,
+              "width": 55.984405517578125,
+              "native": 56
+            },
+            {
+              "text": "Ready",
+              "raw": 45.99066162109375,
+              "minimum": 0,
+              "width": 45.99066162109375,
+              "native": 46
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-mixed-sizes",
+          "labels": [
+            "Draft",
+            "Published",
+            "Archived"
+          ],
+          "sizes": [
+            11,
+            12,
+            14
+          ],
+          "gap": 8,
+          "native": 196.234375,
+          "fast": 196.20155334472656,
+          "errorPx": -0.0328216552734375,
+          "constants": 24,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 35.91082763671875,
+              "minimum": 0,
+              "width": 35.91082763671875,
+              "native": 35.921875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53802490234375,
+              "minimum": 0,
+              "width": 66.53802490234375,
+              "native": 66.546875
+            },
+            {
+              "text": "Archived",
+              "raw": 69.75270080566406,
+              "minimum": 0,
+              "width": 69.75270080566406,
+              "native": 69.765625
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-minimum",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "Draft"
+          ],
+          "gap": 4,
+          "minWidth": 20,
+          "native": 118.28125,
+          "fast": 118.26640319824219,
+          "errorPx": -0.0148468017578125,
+          "constants": 20,
+          "pieces": [
+            {
+              "text": "1",
+              "raw": 14.978927612304688,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "2",
+              "raw": 17.397445678710938,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "3",
+              "raw": 17.522842407226562,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "Draft",
+              "raw": 38.26640319824219,
+              "minimum": 20,
+              "width": 38.26640319824219,
+              "native": 38.28125
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "browser": {
+        "name": "firefox",
+        "version": "159.0.1"
+      },
+      "cases": [
+        {
+          "id": "badge-md",
+          "text": "In progress",
+          "style": "",
+          "native": 74.60000610351562,
+          "fast": 74.5999984741211,
+          "exact": 75,
+          "auto": 74.5999984741211,
+          "errorPx": -0.00000762939453125,
+          "exactErrorPx": 0.399993896484375,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-sm",
+          "text": "Archived",
+          "style": "font-size:11px;padding-inline:3px",
+          "native": 54.96665954589844,
+          "fast": 54.96666717529297,
+          "exact": 55,
+          "auto": 54.96666717529297,
+          "errorPx": 0.00000762939453125,
+          "exactErrorPx": 0.0333404541015625,
+          "computed": {
+            "font": "500 11px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-lg",
+          "text": "Published",
+          "style": "font-size:14px;padding-inline:6px",
+          "native": 79.93333435058594,
+          "fast": 79.93333435058594,
+          "exact": 80,
+          "auto": 79.93333435058594,
+          "errorPx": 0,
+          "exactErrorPx": 0.0666656494140625,
+          "computed": {
+            "font": "500 14px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "6px",
+            "paddingRight": "6px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "weight-700",
+          "text": "In progress",
+          "style": "font-weight:700",
+          "native": 75.98333740234375,
+          "fast": 75.98332977294922,
+          "exact": 76,
+          "auto": 75.98332977294922,
+          "errorPx": -0.00000762939453125,
+          "exactErrorPx": 0.01666259765625,
+          "computed": {
+            "font": "700 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "700",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "letter-spacing",
+          "text": "Archived",
+          "style": "letter-spacing:1.5px",
+          "native": 73.21665954589844,
+          "fast": 73.21666717529297,
+          "exact": 73,
+          "auto": 73.21666717529297,
+          "errorPx": 0.00000762939453125,
+          "exactErrorPx": -0.2166595458984375,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "1.5px",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "word-spacing",
+          "text": "In progress now",
+          "style": "word-spacing:3px",
+          "limitation": true,
+          "native": 108.01666259765625,
+          "fast": 102.01667022705078,
+          "exact": 108,
+          "auto": 102.01667022705078,
+          "errorPx": -5.999992370605469,
+          "exactErrorPx": -0.01666259765625,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "3px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "optical-none",
+          "text": "In progress",
+          "style": "font-size:32px;font-optical-sizing:none",
+          "limitation": true,
+          "native": 182.25,
+          "fast": 167.96665954589844,
+          "exact": 182,
+          "auto": 167.96665954589844,
+          "errorPx": -14.283340454101562,
+          "exactErrorPx": -0.25,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "none",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-weight",
+          "text": "In progress",
+          "style": "font-variation-settings:\"wght\" 850",
+          "limitation": true,
+          "native": 77.26666259765625,
+          "fast": 74.5999984741211,
+          "exact": 77,
+          "auto": 74.5999984741211,
+          "errorPx": -2.6666641235351562,
+          "exactErrorPx": -0.26666259765625,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"wght\" 850",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-optical",
+          "text": "In progress",
+          "style": "font-variation-settings:\"opsz\" 32",
+          "limitation": true,
+          "native": 69.30000305175781,
+          "fast": 74.5999984741211,
+          "exact": 69,
+          "auto": 74.5999984741211,
+          "errorPx": 5.299995422363281,
+          "exactErrorPx": -0.3000030517578125,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"opsz\" 32",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "tabular",
+          "text": "1111 7777",
+          "style": "font-variant-numeric:tabular-nums",
+          "limitation": true,
+          "native": 75.48333740234375,
+          "fast": 61.233333587646484,
+          "exact": 75,
+          "auto": 75.46665954589844,
+          "errorPx": -14.250003814697266,
+          "exactErrorPx": -0.48333740234375,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "features",
+          "text": "1111 7777",
+          "style": "font-feature-settings:\"tnum\" 1",
+          "limitation": true,
+          "native": 75.48333740234375,
+          "fast": 61.233333587646484,
+          "exact": 75,
+          "auto": 75.46665954589844,
+          "errorPx": -14.250003814697266,
+          "exactErrorPx": -0.48333740234375,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "\"tnum\"",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "icon",
+          "text": "Published",
+          "style": "padding-inline:3px",
+          "icon": true,
+          "limitation": true,
+          "native": 82.51666259765625,
+          "fast": 64.51666641235352,
+          "exact": 65,
+          "auto": 64.51666641235352,
+          "composed": 82.51666641235352,
+          "errorPx": -17.999996185302734,
+          "exactErrorPx": -17.51666259765625,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "nested-weight",
+          "text": "Published",
+          "style": "",
+          "nested": true,
+          "limitation": true,
+          "native": 68.21665954589844,
+          "fast": 66.51666641235352,
+          "exact": 67,
+          "auto": 66.51666641235352,
+          "errorPx": -1.6999931335449219,
+          "exactErrorPx": -1.2166595458984375,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "minimum",
+          "text": "1",
+          "style": "min-width:20px",
+          "limitation": true,
+          "native": 20,
+          "fast": 14.983333110809326,
+          "exact": 15,
+          "auto": 14.983333110809326,
+          "errorPx": -5.016666889190674,
+          "exactErrorPx": -5,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-group-two",
+          "labels": [
+            "Draft",
+            "Published"
+          ],
+          "gap": 4,
+          "native": 116.78334045410156,
+          "fast": 116.78333282470703,
+          "errorPx": -0.00000762939453125,
+          "constants": 12,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 38.266666412353516,
+              "minimum": 0,
+              "width": 38.266666412353516,
+              "native": 38.26666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51667785644531
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-repeated",
+          "labels": [
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published"
+          ],
+          "gap": 8,
+          "native": 596.13330078125,
+          "fast": 596.1333312988281,
+          "errorPx": 0.000030517578125,
+          "constants": 64,
+          "pieces": [
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51667785644531
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51667785644531
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            }
+          ],
+          "cacheHits": 7,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-distinct",
+          "labels": [
+            "Design",
+            "Review",
+            "Approved",
+            "Archived",
+            "Draft",
+            "Blocked",
+            "Ready",
+            "Published"
+          ],
+          "gap": 6,
+          "native": 484.8833312988281,
+          "fast": 484.8833351135254,
+          "errorPx": 0.000003814697265625,
+          "constants": 50,
+          "pieces": [
+            {
+              "text": "Design",
+              "raw": 49.849998474121094,
+              "minimum": 0,
+              "width": 49.849998474121094,
+              "native": 49.850006103515625
+            },
+            {
+              "text": "Review",
+              "raw": 51.150001525878906,
+              "minimum": 0,
+              "width": 51.150001525878906,
+              "native": 51.149993896484375
+            },
+            {
+              "text": "Approved",
+              "raw": 65.9000015258789,
+              "minimum": 0,
+              "width": 65.9000015258789,
+              "native": 65.89999389648438
+            },
+            {
+              "text": "Archived",
+              "raw": 61.21666717529297,
+              "minimum": 0,
+              "width": 61.21666717529297,
+              "native": 61.2166748046875
+            },
+            {
+              "text": "Draft",
+              "raw": 38.266666412353516,
+              "minimum": 0,
+              "width": 38.266666412353516,
+              "native": 38.26666259765625
+            },
+            {
+              "text": "Blocked",
+              "raw": 55.983333587646484,
+              "minimum": 0,
+              "width": 55.983333587646484,
+              "native": 55.98333740234375
+            },
+            {
+              "text": "Ready",
+              "raw": 46,
+              "minimum": 0,
+              "width": 46,
+              "native": 46
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-mixed-sizes",
+          "labels": [
+            "Draft",
+            "Published",
+            "Archived"
+          ],
+          "sizes": [
+            11,
+            12,
+            14
+          ],
+          "gap": 8,
+          "native": 196.1999969482422,
+          "fast": 196.19999885559082,
+          "errorPx": 0.0000019073486328125,
+          "constants": 24,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 35.91666603088379,
+              "minimum": 0,
+              "width": 35.91666603088379,
+              "native": 35.91667175292969
+            },
+            {
+              "text": "Published",
+              "raw": 66.51666641235352,
+              "minimum": 0,
+              "width": 66.51666641235352,
+              "native": 66.51666259765625
+            },
+            {
+              "text": "Archived",
+              "raw": 69.76666641235352,
+              "minimum": 0,
+              "width": 69.76666641235352,
+              "native": 69.76666259765625
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-minimum",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "Draft"
+          ],
+          "gap": 4,
+          "minWidth": 20,
+          "native": 118.26666259765625,
+          "fast": 118.26666641235352,
+          "errorPx": 0.000003814697265625,
+          "constants": 20,
+          "pieces": [
+            {
+              "text": "1",
+              "raw": 14.983333110809326,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "2",
+              "raw": 17.40000009536743,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "3",
+              "raw": 17.516666889190674,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "Draft",
+              "raw": 38.266666412353516,
+              "minimum": 20,
+              "width": 38.266666412353516,
+              "native": 38.26666259765625
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "browser": {
+        "name": "webkit",
+        "version": "27.2"
+      },
+      "cases": [
+        {
+          "id": "badge-md",
+          "text": "In progress",
+          "style": "",
+          "native": 74.59375,
+          "fast": 74.58247375488281,
+          "exact": 75,
+          "auto": 74.58247375488281,
+          "errorPx": -0.0112762451171875,
+          "exactErrorPx": 0.40625,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-sm",
+          "text": "Archived",
+          "style": "font-size:11px;padding-inline:3px",
+          "native": 54.953125,
+          "fast": 54.94858932495117,
+          "exact": 55,
+          "auto": 54.94858932495117,
+          "errorPx": -0.004535675048828125,
+          "exactErrorPx": 0.046875,
+          "computed": {
+            "font": "500 11px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-lg",
+          "text": "Published",
+          "style": "font-size:14px;padding-inline:6px",
+          "native": 79.96875,
+          "fast": 79.96115112304688,
+          "exact": 80,
+          "auto": 79.96115112304688,
+          "errorPx": -0.007598876953125,
+          "exactErrorPx": 0.03125,
+          "computed": {
+            "font": "500 14px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "6px",
+            "paddingRight": "6px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "weight-700",
+          "text": "In progress",
+          "style": "font-weight:700",
+          "native": 75.96875,
+          "fast": 75.9661636352539,
+          "exact": 76,
+          "auto": 75.9661636352539,
+          "errorPx": -0.00258636474609375,
+          "exactErrorPx": 0.03125,
+          "computed": {
+            "font": "700 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "700",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "letter-spacing",
+          "text": "Archived",
+          "style": "letter-spacing:1.5px",
+          "native": 73.21875,
+          "fast": 73.21664428710938,
+          "exact": 73,
+          "auto": 73.21664428710938,
+          "errorPx": -0.002105712890625,
+          "exactErrorPx": -0.21875,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "1.5px",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "word-spacing",
+          "text": "In progress now",
+          "style": "word-spacing:3px",
+          "limitation": true,
+          "native": 108,
+          "fast": 101.9948501586914,
+          "exact": 108,
+          "auto": 101.9948501586914,
+          "errorPx": -6.005149841308594,
+          "exactErrorPx": 0,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "3px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "optical-none",
+          "text": "In progress",
+          "style": "font-size:32px;font-optical-sizing:none",
+          "limitation": true,
+          "native": 182.234375,
+          "fast": 167.98171997070312,
+          "exact": 182,
+          "auto": 167.98171997070312,
+          "errorPx": -14.252655029296875,
+          "exactErrorPx": -0.234375,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "none",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-weight",
+          "text": "In progress",
+          "style": "font-variation-settings:\"wght\" 850",
+          "limitation": true,
+          "native": 77.28125,
+          "fast": 74.58247375488281,
+          "exact": 77,
+          "auto": 74.58247375488281,
+          "errorPx": -2.6987762451171875,
+          "exactErrorPx": -0.28125,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"wght\" 850",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "variation-optical",
+          "text": "In progress",
+          "style": "font-variation-settings:\"opsz\" 32",
+          "limitation": true,
+          "native": 69.25,
+          "fast": 74.58247375488281,
+          "exact": 69,
+          "auto": 74.58247375488281,
+          "errorPx": 5.3324737548828125,
+          "exactErrorPx": -0.25,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "\"opsz\" 32",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "tabular",
+          "text": "1111 7777",
+          "style": "font-variant-numeric:tabular-nums",
+          "limitation": true,
+          "native": 75.40625,
+          "fast": 61.229671478271484,
+          "exact": 75,
+          "auto": 75.453125,
+          "errorPx": -14.176578521728516,
+          "exactErrorPx": -0.40625,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "features",
+          "text": "1111 7777",
+          "style": "font-feature-settings:\"tnum\" 1",
+          "limitation": true,
+          "native": 75.40625,
+          "fast": 61.229671478271484,
+          "exact": 75,
+          "auto": 75.453125,
+          "errorPx": -14.176578521728516,
+          "exactErrorPx": -0.40625,
+          "computed": {
+            "font": "",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "\"tnum\"",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "icon",
+          "text": "Published",
+          "style": "padding-inline:3px",
+          "icon": true,
+          "limitation": true,
+          "native": 82.546875,
+          "fast": 64.53813171386719,
+          "exact": 65,
+          "auto": 64.53813171386719,
+          "composed": 82.53813171386719,
+          "errorPx": -18.008743286132812,
+          "exactErrorPx": -17.546875,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "3px",
+            "paddingRight": "3px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "nested-weight",
+          "text": "Published",
+          "style": "",
+          "nested": true,
+          "limitation": true,
+          "native": 68.234375,
+          "fast": 66.53813171386719,
+          "exact": 67,
+          "auto": 66.53813171386719,
+          "errorPx": -1.6962432861328125,
+          "exactErrorPx": -1.234375,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "minimum",
+          "text": "1",
+          "style": "min-width:20px",
+          "limitation": true,
+          "native": 20,
+          "fast": 14.978941440582275,
+          "exact": 15,
+          "auto": 14.978941440582275,
+          "errorPx": -5.021058559417725,
+          "exactErrorPx": -5,
+          "computed": {
+            "font": "500 12px Box Inter",
+            "fontFamily": "Box Inter",
+            "fontWeight": "500",
+            "letterSpacing": "normal",
+            "wordSpacing": "0px",
+            "fontOpticalSizing": "auto",
+            "fontVariationSettings": "normal",
+            "fontFeatureSettings": "normal",
+            "paddingLeft": "4px",
+            "paddingRight": "4px",
+            "borderLeftWidth": "1px",
+            "borderRightWidth": "1px"
+          },
+          "passed": true
+        },
+        {
+          "id": "badge-group-two",
+          "labels": [
+            "Draft",
+            "Published"
+          ],
+          "gap": 4,
+          "native": 116.828125,
+          "fast": 116.80456161499023,
+          "errorPx": -0.023563385009765625,
+          "constants": 12,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 38.26642990112305,
+              "minimum": 0,
+              "width": 38.26642990112305,
+              "native": 38.28125
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-repeated",
+          "labels": [
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published",
+            "Published"
+          ],
+          "gap": 8,
+          "native": 596.375,
+          "fast": 596.3050537109375,
+          "errorPx": -0.0699462890625,
+          "constants": 64,
+          "pieces": [
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 7,
+          "passed": true
+        },
+        {
+          "id": "badge-group-eight-distinct",
+          "labels": [
+            "Design",
+            "Review",
+            "Approved",
+            "Archived",
+            "Draft",
+            "Blocked",
+            "Ready",
+            "Published"
+          ],
+          "gap": 6,
+          "native": 484.984375,
+          "fast": 484.89171600341797,
+          "errorPx": -0.09265899658203125,
+          "constants": 50,
+          "pieces": [
+            {
+              "text": "Design",
+              "raw": 49.844547271728516,
+              "minimum": 0,
+              "width": 49.844547271728516,
+              "native": 49.859375
+            },
+            {
+              "text": "Review",
+              "raw": 51.1407585144043,
+              "minimum": 0,
+              "width": 51.1407585144043,
+              "native": 51.15625
+            },
+            {
+              "text": "Approved",
+              "raw": 65.91000366210938,
+              "minimum": 0,
+              "width": 65.91000366210938,
+              "native": 65.921875
+            },
+            {
+              "text": "Archived",
+              "raw": 61.216644287109375,
+              "minimum": 0,
+              "width": 61.216644287109375,
+              "native": 61.21875
+            },
+            {
+              "text": "Draft",
+              "raw": 38.26642990112305,
+              "minimum": 0,
+              "width": 38.26642990112305,
+              "native": 38.28125
+            },
+            {
+              "text": "Blocked",
+              "raw": 55.984474182128906,
+              "minimum": 0,
+              "width": 55.984474182128906,
+              "native": 56
+            },
+            {
+              "text": "Ready",
+              "raw": 45.990726470947266,
+              "minimum": 0,
+              "width": 45.990726470947266,
+              "native": 46
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-mixed-sizes",
+          "labels": [
+            "Draft",
+            "Published",
+            "Archived"
+          ],
+          "sizes": [
+            11,
+            12,
+            14
+          ],
+          "gap": 8,
+          "native": 196.234375,
+          "fast": 196.2017765045166,
+          "errorPx": -0.03259849548339844,
+          "constants": 24,
+          "pieces": [
+            {
+              "text": "Draft",
+              "raw": 35.9108943939209,
+              "minimum": 0,
+              "width": 35.9108943939209,
+              "native": 35.921875
+            },
+            {
+              "text": "Published",
+              "raw": 66.53813171386719,
+              "minimum": 0,
+              "width": 66.53813171386719,
+              "native": 66.546875
+            },
+            {
+              "text": "Archived",
+              "raw": 69.75275039672852,
+              "minimum": 0,
+              "width": 69.75275039672852,
+              "native": 69.765625
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        },
+        {
+          "id": "badge-group-minimum",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "Draft"
+          ],
+          "gap": 4,
+          "minWidth": 20,
+          "native": 118.28125,
+          "fast": 118.26642990112305,
+          "errorPx": -0.014820098876953125,
+          "constants": 20,
+          "pieces": [
+            {
+              "text": "1",
+              "raw": 14.978941440582275,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "2",
+              "raw": 17.397457599639893,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "3",
+              "raw": 17.522847175598145,
+              "minimum": 20,
+              "width": 20,
+              "native": 20
+            },
+            {
+              "text": "Draft",
+              "raw": 38.26642990112305,
+              "minimum": 20,
+              "width": 38.26642990112305,
+              "native": 38.28125
+            }
+          ],
+          "cacheHits": 0,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

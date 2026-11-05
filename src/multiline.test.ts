@@ -460,17 +460,20 @@ describe("measureInlineTextMultilineWidth", () => {
 
   // This test should fail if: the detached exact-wrap probe omits the source's
   // computed word spacing and therefore wraps with different text metrics.
-  it("copies word spacing to the exact DOM wrap probe", () => {
+  it("copies word spacing and optical sizing to the exact DOM wrap probe", () => {
     stubCanvasMeasurement((value) => Array.from(value).length);
     const source = createSource();
     source.style.wordSpacing = "3px";
+    source.style.fontOpticalSizing = "none";
     const probeWordSpacings: string[] = [];
+    const probeOpticalSizing: string[] = [];
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
         if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 8 } as DOMRect;
         }
         probeWordSpacings.push(this.style.wordSpacing);
+        probeOpticalSizing.push(this.style.fontOpticalSizing);
         const width = Number.parseFloat(this.style.width) || 1_000_000;
         return { height: 10, width } as DOMRect;
       });
@@ -484,6 +487,7 @@ describe("measureInlineTextMultilineWidth", () => {
 
     expect(probeWordSpacings.length).toBeGreaterThan(0);
     expect(probeWordSpacings.every((value) => value === "3px")).toBe(true);
+    expect(probeOpticalSizing.every((value) => value === "none")).toBe(true);
     source.remove();
   });
 

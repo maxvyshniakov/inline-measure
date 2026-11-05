@@ -34,7 +34,8 @@ if (ref) {
   }
   await symlink(resolve("node_modules"), resolve(scratch, "node_modules"));
 }
-const server = await createServer({ configFile: false,
+const viteCache = await mkdtemp(resolve(tmpdir(), "inline-measure-vite-"));
+const server = await createServer({ configFile: false, cacheDir: viteCache,
   ...(scratch ? { resolve: { alias: { "/src": resolve(scratch, "src") } } } : {}),
   server: { host: "127.0.0.1", port: 0, fs: { allow: [process.cwd(), ...(scratch ? [scratch] : [])] } },
 });
@@ -75,8 +76,9 @@ try {
     scenarios: [],
   };
   if (!args.includes("--correctness")) {
-    for (const kind of ["regular", "tabular", "repeated", "mixed", "multiline2", "multiline3"]) {
+    for (const kind of ["regular", "tabular", "repeated", "mixed", "multiline2", "multiline3", "badges", "badges-repeated"]) {
       for (const accuracy of ["fast", "auto", "exact"]) {
+        if (kind.startsWith("badges") && accuracy !== "fast") continue;
         for (const count of [50, 200]) {
           for (const phase of ["cold", "warm"]) {
             if (!scenarioFilter.test(`${kind}/${accuracy}/${count}/${phase}`)) continue;
@@ -103,5 +105,6 @@ try {
 } finally {
   await browser?.close();
   await server.close();
+  await rm(viteCache, { recursive: true, force: true });
   if (ref && scratch) await rm(scratch, { recursive: true, force: true });
 }

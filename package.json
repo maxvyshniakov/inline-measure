@@ -43,7 +43,8 @@
     "perf:capture": "bun run perf",
     "perf:report": "node scripts/perf/print-report.mjs",
     "perf:test": "bun run test:perf",
-    "verify:fonts": "repo-kit heavy 1 node scripts/perf/font-check.mjs"
+    "verify:fonts": "repo-kit heavy 1 node scripts/perf/font-check.mjs",
+    "verify:boxes": "repo-kit heavy 1 node scripts/perf/inline-box-check.mjs"
   },
   "devDependencies": {
     "@fontsource/inter": "^5.3.0",

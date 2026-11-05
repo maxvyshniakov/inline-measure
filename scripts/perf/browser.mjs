@@ -104,30 +104,78 @@ async function ready() {
   if (!document.fonts.check('14px "Probe Inter"')) throw new Error("Probe Inter did not load");
 }
 
+// A common tag cell: three independent badges plus two outer flex gaps.
+// The fixture has one stable text/box style, so its local cache key is the label.
+// A consumer with mixed styles must include the full style signature as well.
+function badgeGroupWorkload(config) {
+  const source = document.createElement("span");
+  source.style.cssText = 'display:inline-flex;white-space:pre;font:500 12px "Probe Inter";padding:2px 4px;border:1px solid transparent;min-width:0';
+  document.body.append(source);
+  const repeated = ["Draft", "Review", "Approved", "Archived", "Blocked", "Published"];
+  const groups = Array.from({ length: config.count }, (_, row) => Array.from({ length: 3 }, (_, column) =>
+    config.kind === "badges-repeated" ? repeated[(row + column) % repeated.length] : `Tag ${row * 3 + column + 1}`));
+  // Independent fixture geometry: group padding/borders 8px + two 6px gaps.
+  const groupConstant = 8 + 2 * 6;
+  const cache = new Map();
+  return {
+    source,
+    clear: () => cache.clear(),
+    batch: () => groups.map(labels => labels.reduce((width, text) => {
+      let value = cache.get(text);
+      if (value === undefined) {
+        value = measureInlineTextWidth({ sourceElement: source, text, accuracy: "fast" });
+        cache.set(text, value);
+      }
+      return width + value;
+    }, groupConstant)),
+    expected: () => {
+      const root = document.createElement("div");
+      const nodes = groups.map(labels => {
+        const group = document.createElement("span");
+        group.style.cssText = "display:inline-flex;width:max-content;gap:6px;padding:0 3px;border:1px solid transparent";
+        for (const text of labels) {
+          const badge = document.createElement("span");
+          badge.style.cssText = source.style.cssText;
+          badge.style.flex = "none";
+          badge.textContent = text;
+          group.append(badge);
+        }
+        root.append(group);
+        return group;
+      });
+      document.body.append(root);
+      try { return nodes.map(node => node.getBoundingClientRect().width); }
+      finally { root.remove(); }
+    },
+  };
+}
+
 window.runScenario = async (config, samples, iterations) => {
   await ready();
-  const source = sourceFor(config.kind);
+  const badgeGroups = config.kind.startsWith("badges") ? badgeGroupWorkload(config) : null;
+  const source = badgeGroups?.source ?? sourceFor(config.kind);
   const sources = config.kind === "mixed" ? [source, sourceFor("mixed", 1), sourceFor("mixed", 2)] : [source];
   const values = texts(config.kind, config.count);
-  const batch = () => values.map((text, index) => measure(config, sources[index % sources.length], text));
+  const batch = badgeGroups?.batch ?? (() => values.map((text, index) => measure(config, sources[index % sources.length], text)));
+  const clear = () => { clearInlineMeasurementCacheForTests(); badgeGroups?.clear(); };
   try {
     const samplesMs = [];
     for (let sample = 0; sample < samples; sample += 1) {
-      clearInlineMeasurementCacheForTests();
+      clear();
       if (config.phase === "warm") batch();
       const start = performance.now();
       for (let iteration = 0; iteration < iterations; iteration += 1) {
-        if (config.phase === "cold") clearInlineMeasurementCacheForTests();
+        if (config.phase === "cold") clear();
         batch();
       }
       samplesMs.push((performance.now() - start) / iterations);
     }
-    clearInlineMeasurementCacheForTests();
+    clear();
     if (config.phase === "warm") batch();
     const trace = instrumentation();
     let widths;
     try { widths = batch(); } finally { trace.restore(); }
-    const expected = values.map((text, index) => oracle(sources[index % sources.length], text, config.kind.startsWith("multiline") ? Number(config.kind.slice(-1)) : 0));
+    const expected = badgeGroups ? badgeGroups.expected() : values.map((text, index) => oracle(sources[index % sources.length], text, config.kind.startsWith("multiline") ? Number(config.kind.slice(-1)) : 0));
     const errors = widths.map((width, index) => width - expected[index]);
     return {
       id: `${config.kind}/${config.accuracy}/${config.count}/${config.phase}`,
@@ -191,6 +239,15 @@ window.checkFixtures = async () => {
   b("WIDE");
   const repeat = a("Office affinity");
   spaced.remove();
+  for (const kind of ["badges", "badges-repeated"]) {
+    const workload = badgeGroupWorkload({ kind, count: 8 });
+    try {
+      const actual = workload.batch();
+      const expected = workload.expected();
+      actual.forEach((width, index) => cases.push({ style: kind, text: `group ${index}`, lines: 0,
+        actual: width, expected: expected[index], errorPx: width - expected[index], passed: Math.abs(width - expected[index]) <= 1 }));
+    } finally { workload.source.remove(); }
+  }
   return { cases, interleavedStable: first === repeat, fontsLoaded: document.fonts.check('14px "Probe Inter"') };
 };
 

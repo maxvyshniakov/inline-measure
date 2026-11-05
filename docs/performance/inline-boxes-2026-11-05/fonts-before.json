@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "reports": [
+    {
+      "browser": {
+        "name": "chromium",
+        "version": "156.0.8078.4"
+      },
+      "firstCycle": {
+        "beforeCanvas": 117.619140625,
+        "beforeAuto": 117.6875,
+        "afterCanvas": 99.39453125,
+        "afterAuto": 116.46875,
+        "native": 116.46875,
+        "plainNative": 99.40625,
+        "events": {
+          "loading": 2,
+          "loadingdone": 2
+        },
+        "passed": true
+      },
+      "overlappingCycle": {
+        "statusBefore": "loading",
+        "statusAfter": "loading",
+        "fallbackCanvas": 117.619140625,
+        "fallbackAuto": 117.6875,
+        "requiredCanvas": 99.39453125,
+        "requiredAuto": 117.6875,
+        "requiredNative": 116.46875,
+        "requiredPlainNative": 99.40625,
+        "passed": false
+      },
+      "passed": false
+    },
+    {
+      "browser": {
+        "name": "firefox",
+        "version": "159.0.1"
+      },
+      "firstCycle": {
+        "beforeCanvas": 118.06666564941406,
+        "beforeAuto": 118.06668090820312,
+        "afterCanvas": 99.4000015258789,
+        "afterAuto": 116.86666870117188,
+        "native": 116.53334045410156,
+        "plainNative": 99.39999389648438,
+        "events": {
+          "loading": 2,
+          "loadingdone": 1
+        },
+        "passed": true
+      },
+      "overlappingCycle": {
+        "statusBefore": "loading",
+        "statusAfter": "loading",
+        "fallbackCanvas": 118.06666564941406,
+        "fallbackAuto": 118.06668090820312,
+        "requiredCanvas": 99.4000015258789,
+        "requiredAuto": 118.06668090820312,
+        "requiredNative": 116.53334045410156,
+        "requiredPlainNative": 99.40000915527344,
+        "passed": false
+      },
+      "passed": false
+    },
+    {
+      "browser": {
+        "name": "webkit",
+        "version": "27.2"
+      },
+      "firstCycle": {
+        "beforeCanvas": 117.619140625,
+        "beforeAuto": 118.125,
+        "afterCanvas": 99.39453125,
+        "afterAuto": 116.8125,
+        "native": 116.46875,
+        "plainNative": 99.40625,
+        "events": {
+          "loading": 2,
+          "loadingdone": 0
+        },
+        "passed": true
+      },
+      "overlappingCycle": {
+        "statusBefore": "loading",
+        "statusAfter": "loading",
+        "fallbackCanvas": 117.619140625,
+        "fallbackAuto": 118.125,
+        "requiredCanvas": 99.39453125,
+        "requiredAuto": 118.125,
+        "requiredNative": 116.46875,
+        "requiredPlainNative": 99.40625,
+        "passed": false
+      },
+      "passed": false
+    }
+  ]
+}

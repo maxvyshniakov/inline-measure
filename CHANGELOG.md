@@ -4,6 +4,22 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Fixed
+
+- Font calibration refreshes when an individual font face finishes loading,
+  even while an unrelated face keeps the global font set in `loading`.
+- Exact single-line text preserves word spacing. Exact single-line and multiline
+  probes also preserve optical sizing, and tabular calibration separates these
+  style settings.
+
+### Added
+
+- A standalone inline-box correctness check compares raw native widths before
+  minimum-width or column clamps, covering plain badge styles, composed icons,
+  groups of badges and gaps, numeric features and variable-font axes with an
+  optional supplied font. Eight performance scenarios cover distinct/repeated
+  labels in 50/200 groups of three badges on cold and warm label caches.
+
 ## 0.3.1 - 2026-11-05
 
 ### Changed

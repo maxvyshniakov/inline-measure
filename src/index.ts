@@ -27,6 +27,7 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
   "fontFamily",
   "fontFeatureSettings",
   "fontKerning",
+  "fontOpticalSizing",
   "fontSize",
   "fontStretch",
   "fontStyle",
@@ -37,6 +38,7 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
   "fontWeight",
   "letterSpacing",
   "lineHeight",
+  "wordSpacing",
   "textTransform",
   "paddingLeft",
   "paddingRight",
@@ -58,22 +60,39 @@ interface CanvasFontState {
 }
 let canvasFonts = new WeakMap<CanvasRenderingContext2D, CanvasFontState>();
 const watchedFontSets = new WeakSet<FontFaceSet>();
+const watchedPendingFaces = new WeakSet<FontFace>();
+
+function invalidateFontMeasurements() {
+  // Safari can keep a resolved fallback font in the Canvas context even
+  // when the declared string is unchanged. A fresh context resolves again.
+  measurementCanvas = null;
+  canvasFonts = new WeakMap();
+  tabularGlyphMeasurementCache.clear();
+}
+
+function watchPendingFontFaces(fonts: FontFaceSet | undefined, status = fonts?.status) {
+  if (status !== "loading" || !fonts?.forEach) return;
+  fonts.forEach(face => {
+    if (face.status === "loaded" || watchedPendingFaces.has(face)) return;
+    watchedPendingFaces.add(face);
+    // FontFaceSet.ready/loadingdone can wait for unrelated faces. A face's
+    // own promise resolves as soon as its fallback metrics become obsolete.
+    void face.loaded.then(invalidateFontMeasurements, invalidateFontMeasurements);
+  });
+}
 
 function watchFontLoads(fonts: FontFaceSet | undefined) {
   if (!fonts?.addEventListener || watchedFontSets.has(fonts)) return;
   watchedFontSets.add(fonts);
-  const invalidate = () => {
-    // Safari can keep a resolved fallback font in the Canvas context even
-    // when the declared string is unchanged. A fresh context resolves again.
-    measurementCanvas = null;
-    canvasFonts = new WeakMap();
-    tabularGlyphMeasurementCache.clear();
-  };
-  fonts.addEventListener("loadingdone", invalidate);
-  fonts.addEventListener("loadingerror", invalidate);
+  watchPendingFontFaces(fonts);
+  fonts.addEventListener("loadingdone", invalidateFontMeasurements);
+  fonts.addEventListener("loadingerror", invalidateFontMeasurements);
   // Some WebKit FontFaceSet implementations dispatch loading but omit
   // loadingdone. ready still resolves for that loading cycle.
-  fonts.addEventListener("loading", () => { void fonts.ready.then(invalidate); });
+  fonts.addEventListener("loading", () => {
+    watchPendingFontFaces(fonts);
+    void fonts.ready.then(invalidateFontMeasurements);
+  });
 }
 
 export function applyInlineMeasurementStyles(
@@ -196,9 +215,9 @@ function isCanvasFontStretchValue(value: string) {
     || value === "ultra-expanded";
 }
 
-function getInlineTextStyleSignature(computed: CSSStyleDeclaration) {
+function getInlineTextStyleSignature(computed: CSSStyleDeclaration, fontStatus: string) {
   return [
-    typeof document === "undefined" ? "" : document.fonts?.status ?? "",
+    fontStatus,
     computed.font,
     computed.fontFamily,
     computed.fontSize,
@@ -206,6 +225,7 @@ function getInlineTextStyleSignature(computed: CSSStyleDeclaration) {
     computed.fontVariant,
     computed.fontFeatureSettings,
     computed.fontKerning,
+    computed.fontOpticalSizing,
     computed.fontStretch,
     computed.fontWeight,
     computed.fontVariantCaps,
@@ -213,6 +233,7 @@ function getInlineTextStyleSignature(computed: CSSStyleDeclaration) {
     computed.fontVariationSettings,
     computed.lineHeight,
     computed.letterSpacing,
+    computed.wordSpacing,
     computed.textTransform,
   ].join("\u001f");
 }
@@ -231,8 +252,12 @@ function getElementMeasuredWidth(element: HTMLElement) {
 }
 
 function getTabularGlyphCache(computed: CSSStyleDeclaration) {
-  watchFontLoads(document.fonts);
-  const signature = getInlineTextStyleSignature(computed);
+  const fonts = document.fonts;
+  const status = fonts?.status ?? "";
+  watchFontLoads(fonts);
+  // Catch faces added during an already active global loading cycle too.
+  watchPendingFontFaces(fonts, status);
+  const signature = getInlineTextStyleSignature(computed, status);
   let cache = tabularGlyphMeasurementCache.get(signature);
   if (!cache) {
     cache = new Map<string, number>();

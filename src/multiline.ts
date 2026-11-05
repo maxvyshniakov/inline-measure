@@ -71,6 +71,7 @@ const WRAP_TEXT_STYLE_PROPERTIES = [
   "fontFamily",
   "fontFeatureSettings",
   "fontKerning",
+  "fontOpticalSizing",
   "fontSize",
   "fontStretch",
   "fontStyle",

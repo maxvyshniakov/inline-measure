@@ -13,6 +13,7 @@ bun run verify:browser --browser chromium
 bun run verify:browser --browser firefox
 bun run verify:browser --browser webkit
 bun run verify:fonts
+bun run verify:boxes
 bun run perf:test
 
 # Capture the committed implementation without checking out or changing files.
@@ -32,13 +33,22 @@ directory remains owned by the caller and is never deleted by the runner.
 
 ## Workload and timing
 
-There are 72 scenarios: 50/200 strings, cold/warm cache state, fast/auto/exact,
+There are 80 scenarios: 72 for 50/200 strings, cold/warm cache state, fast/auto/exact,
 and single-line labels/tabular currency and dates/repeated labels/interleaved
 font styles/multiline 2/3 lines. Samples
 contain 50 identical batch repetitions by default (`--iterations 50`), with
 seven raw samples (`--samples 7`). Reported milliseconds are per batch, including
 all 50/200 strings. This keeps the timed sample above clock quantization even
 when a batch takes less than one millisecond.
+
+Eight additional `badges`/`badges-repeated` scenarios measure 50/200 groups of
+three badges with two outer 6px gaps and group padding/border. They use `fast`
+and a cache local to one stable badge style: cold clears that label cache per
+batch; warm primes it once and reuses it. Distinct groups have 150/600 unique
+labels; repeated groups share six labels. `count` means groups, not labels.
+Both the group timing oracle and the correctness-only command compare raw
+group widths to native inline-flex geometry before any column minimum/clamp.
+For example, `--scenario '^badges.*?/fast/200/(cold|warm)$'` captures four cases.
 
 Cold means the package's tabular glyph cache is cleared before each batch;
 warm primes an identical batch first. It does not mean a new browser process,
@@ -74,6 +84,8 @@ representative mixed-style and multiline scenarios. Baseline and candidate
 must use the same filter. `perf:capture` aliases `perf`. The separate delayed-font
 check serves a local font with a real network delay and verifies both reusable
 Canvas measurement and tabular calibration after the font loads.
+It also holds an unrelated font request open while the required face loads,
+asserting fresh raw widths while the global font status remains `loading`.
 
 The retained before/canvas/final captures separate unchanged-output Canvas
 optimization from accuracy changes that can add DOM layout work. All source
@@ -105,3 +117,29 @@ The native oracle reports real browser geometry but is not a full CSS layout
 engine acceptance suite. Playwright WebKit is not installed Safari. Browser
 fonts, language, emoji, font fallback and arbitrary OpenType features can still
 differ; fast/auto approximations are not promoted to exact guarantees.
+
+## Inline boxes and typography
+
+`verify:boxes` checks raw single-line widths independently of Data Grid clamps.
+It mirrors simple badge typography and box styles, then observes explicitly
+unsupported text-only estimates for icons, nested weights, minimum widths,
+OpenType numeric features and variable-font axes. The icon fixture also asserts
+a label + cached constant composition; exact text is checked against native
+geometry for all uniformly styled fixtures. A 1px tolerance covers integer
+rounding of exact measurement. Unsupported fast fixtures are observations, not
+accuracy guarantees. This is correctness evidence, not a throughput benchmark.
+Five additional group fixtures cover 2–8 badges, repeated/distinct labels,
+mixed sizes, gaps and each badge's own minimum width. They verify raw group
+geometry and seven cache hits for eight identical labels, before column clamps.
+
+The default font is the existing local Inter 400 fixture. To exercise actual
+variable axes, pass `--font /absolute/path/to/InterVariable.woff2`; the report
+records the font's SHA-256, source hash, harness hash, engine versions and raw
+widths. This is a supplied test asset, not a runtime dependency on its owner.
+`--ref <commit>` compares committed source without changing a checkout. Each
+engine also saves a fixture screenshot next to the JSON output. For example:
+
+```sh
+bun run verify:boxes --font /path/to/InterVariable.woff2 --ref 6197258 --output artifacts/perf/boxes-before.json
+bun run verify:boxes --font /path/to/InterVariable.woff2 --output artifacts/perf/boxes-after.json
+```

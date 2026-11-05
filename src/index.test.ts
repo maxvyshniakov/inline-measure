@@ -38,6 +38,17 @@ function stubCanvasMeasurement(widthPerCharacter: number) {
 }
 
 describe("inline-measure", () => {
+  it("preserves optical sizing and word spacing on exact text nodes", () => {
+    const source = document.createElement("span");
+    source.style.fontOpticalSizing = "none";
+    source.style.wordSpacing = "3px";
+    document.body.append(source);
+    const node = createInlineTextMeasurementNode({ sourceElement: source, text: "In progress" });
+    expect(node.style.fontOpticalSizing).toBe("none");
+    expect(node.style.wordSpacing).toBe("3px");
+    source.remove();
+  });
+
   it("reuses canvas state for repeated measurements and restores interleaved styles", () => {
     const values: Record<string, string> = {
       font: "10px sans-serif", fontKerning: "auto", fontStretch: "normal",
@@ -295,6 +306,36 @@ describe("inline-measure", () => {
 
     expect(widthReads).toBe(3);
     source.remove();
+  });
+
+  it("refreshes tabular glyphs when a face loads while the global font set stays loading", async () => {
+    const originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
+    let finish!: () => void;
+    let glyphWidth = 7;
+    const face = { status: "loading", loaded: new Promise<void>(resolve => { finish = resolve; }) };
+    const fonts = Object.assign(new EventTarget(), { status: "loading", ready: new Promise(() => {}),
+      forEach: (callback: (face: unknown) => void) => callback(face),
+    });
+    Object.defineProperty(document, "fonts", { configurable: true, value: fonts });
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true,
+      get() { return (this.textContent?.length ?? 0) * glyphWidth; },
+    });
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    document.body.append(source);
+    try {
+      expect(measureInlineTextWidth({ sourceElement: source, text: "12" })).toBe(14);
+      glyphWidth = 9;
+      face.status = "loaded";
+      finish();
+      await face.loaded;
+      expect(fonts.status).toBe("loading");
+      expect(measureInlineTextWidth({ sourceElement: source, text: "12" })).toBe(18);
+    } finally {
+      source.remove();
+      if (originalFonts) Object.defineProperty(document, "fonts", originalFonts);
+      else Reflect.deleteProperty(document, "fonts");
+    }
   });
 
   it("keeps tabular glyph calibration separate across font loading states", () => {
