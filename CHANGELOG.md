@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.3.2 - 2026-11-05
+
 ### Fixed
 
 - Font calibration refreshes when an individual font face finishes loading,
