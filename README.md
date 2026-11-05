@@ -25,6 +25,13 @@ element's rendered width, and `createCanvasTextMeasurer` returns a reusable
 The `@maxvyshniakov/inline-measure/multiline` entrypoint measures wrapped text:
 `measureInlineTextMultilineWidth` returns the narrowest width at which `text`
 fits in `lines` lines, using the same `accuracy` options.
+`fast` and `auto` use Canvas estimates and Unicode break opportunities;
+`exact` verifies native wrapping and searches both narrower and wider integer
+content widths. The native check includes horizontal overflow of long tokens.
+
+Reusable Canvas measurers and tabular glyph calibration refresh after font
+loading cycles. Load the required fonts before the first measurement so its
+initial answer uses the intended font.
 
 The `@maxvyshniakov/inline-measure/testing` entrypoint is for tests that fake
 layout: `clearInlineMeasurementCacheForTests` forgets the tabular glyph widths
@@ -65,6 +72,10 @@ publishing follow [docs/VERSIONING.md](docs/VERSIONING.md).
 
 Live examples are in the Data Grid Storybook, which renders Inline Measure and
 Text Truncate demos alongside the grid.
+
+The package also has an independent browser correctness and performance harness;
+it runs directly against this source without a Data Grid build. See
+[performance checks](docs/performance/README.md) for baselines and comparison commands.
 
 ## License
 

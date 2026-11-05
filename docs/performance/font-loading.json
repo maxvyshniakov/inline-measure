@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "reports": [
+    {
+      "browser": {
+        "name": "chromium",
+        "version": "156.0.8078.4"
+      },
+      "beforeCanvas": 117.619140625,
+      "beforeAuto": 117.6875,
+      "afterCanvas": 99.39453125,
+      "afterAuto": 116.46875,
+      "native": 116.46875,
+      "plainNative": 99.40625,
+      "events": {
+        "loading": 1,
+        "loadingdone": 1
+      },
+      "passed": true
+    },
+    {
+      "browser": {
+        "name": "firefox",
+        "version": "159.0.1"
+      },
+      "beforeCanvas": 118.06666564941406,
+      "beforeAuto": 118.06668090820312,
+      "afterCanvas": 99.4000015258789,
+      "afterAuto": 116.86666870117188,
+      "native": 116.53334045410156,
+      "plainNative": 99.39999389648438,
+      "events": {
+        "loading": 1,
+        "loadingdone": 0
+      },
+      "passed": true
+    },
+    {
+      "browser": {
+        "name": "webkit",
+        "version": "27.2"
+      },
+      "beforeCanvas": 117.619140625,
+      "beforeAuto": 118.125,
+      "afterCanvas": 99.39453125,
+      "afterAuto": 116.8125,
+      "native": 116.46875,
+      "plainNative": 99.40625,
+      "events": {
+        "loading": 1,
+        "loadingdone": 0
+      },
+      "passed": true
+    }
+  ]
+}

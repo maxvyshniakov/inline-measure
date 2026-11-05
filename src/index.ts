@@ -51,6 +51,30 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
 ] as const satisfies ReadonlyArray<keyof CSSStyleDeclaration>;
 
 let measurementCanvas: HTMLCanvasElement | null = null;
+interface CanvasFontState {
+  font: string;
+  stretch: string;
+  caps: string;
+}
+let canvasFonts = new WeakMap<CanvasRenderingContext2D, CanvasFontState>();
+const watchedFontSets = new WeakSet<FontFaceSet>();
+
+function watchFontLoads(fonts: FontFaceSet | undefined) {
+  if (!fonts?.addEventListener || watchedFontSets.has(fonts)) return;
+  watchedFontSets.add(fonts);
+  const invalidate = () => {
+    // Safari can keep a resolved fallback font in the Canvas context even
+    // when the declared string is unchanged. A fresh context resolves again.
+    measurementCanvas = null;
+    canvasFonts = new WeakMap();
+    tabularGlyphMeasurementCache.clear();
+  };
+  fonts.addEventListener("loadingdone", invalidate);
+  fonts.addEventListener("loadingerror", invalidate);
+  // Some WebKit FontFaceSet implementations dispatch loading but omit
+  // loadingdone. ready still resolves for that loading cycle.
+  fonts.addEventListener("loading", () => { void fonts.ready.then(invalidate); });
+}
 
 export function applyInlineMeasurementStyles(
   element: HTMLElement,
@@ -81,20 +105,24 @@ export function createInlineMeasurementRoot(ownerDocument: Document = document) 
 export function createCanvasTextMeasurer(
   fontOrComputedStyle: string | CSSStyleDeclaration,
 ) {
+  if (typeof document !== "undefined") watchFontLoads(document.fonts);
   return (value: string) => {
     if (typeof document === "undefined") return value.length;
     measurementCanvas ??= document.createElement("canvas");
     const context = measurementCanvas.getContext("2d");
     if (!context) return value.length;
 
-    resetCanvasContextTextProperties(context);
     if (typeof fontOrComputedStyle === "string") {
-      context.font = fontOrComputedStyle;
+      const shorthand = setCanvasFont(context, fontOrComputedStyle);
+      setCanvasContextProperty(context, "fontKerning", "auto");
+      setCanvasContextProperty(context, "fontStretch", shorthand.stretch);
+      setCanvasContextProperty(context, "fontVariantCaps", shorthand.caps);
+      setCanvasContextProperty(context, "letterSpacing", "0px");
     } else {
-      context.font = getCanvasFont(fontOrComputedStyle);
-      setCanvasContextProperty(context, "fontKerning", fontOrComputedStyle.fontKerning);
-      setCanvasContextProperty(context, "fontStretch", fontOrComputedStyle.fontStretch);
-      setCanvasContextProperty(context, "fontVariantCaps", fontOrComputedStyle.fontVariantCaps);
+      setCanvasFont(context, getCanvasFont(fontOrComputedStyle));
+      setCanvasContextProperty(context, "fontKerning", fontOrComputedStyle.fontKerning || "auto");
+      setCanvasContextProperty(context, "fontStretch", isCanvasFontStretchValue(fontOrComputedStyle.fontStretch) ? fontOrComputedStyle.fontStretch : "normal");
+      setCanvasContextProperty(context, "fontVariantCaps", fontOrComputedStyle.fontVariantCaps || "normal");
       const supportsLetterSpacing = setCanvasContextProperty(
         context,
         "letterSpacing",
@@ -111,20 +139,26 @@ export function createCanvasTextMeasurer(
   };
 }
 
-function resetCanvasContextTextProperties(context: CanvasRenderingContext2D) {
-  setCanvasContextProperty(context, "fontKerning", "auto");
-  if ("fontStretch" in context) {
-    setCanvasContextProperty(context, "fontStretch", "normal");
-  }
+function setCanvasFont(context: CanvasRenderingContext2D, font: string) {
+  // Canvas normalizes the shorthand it reads back. Keep the requested string so
+  // an equivalent browser serialization does not cause repeated font parsing.
+  const previous = canvasFonts.get(context);
+  if (previous?.font === font) return previous;
+  setCanvasContextProperty(context, "fontStretch", "normal");
   setCanvasContextProperty(context, "fontVariantCaps", "normal");
-  setCanvasContextProperty(context, "letterSpacing", "0px");
+  context.font = font;
+  const state = { font, stretch: context.fontStretch || "normal", caps: context.fontVariantCaps || "normal" };
+  canvasFonts.set(context, state);
+  return state;
 }
 
 function getCanvasFont(computed: CSSStyleDeclaration) {
   if (computed.font) return computed.font;
 
   const style = computed.fontStyle && computed.fontStyle !== "normal" ? computed.fontStyle : "";
-  const variant = computed.fontVariant && computed.fontVariant !== "normal" ? computed.fontVariant : "";
+  // The font shorthand accepts CSS2 small-caps, not numeric variants such as
+  // tabular-nums. Passing those makes Canvas silently keep its previous font.
+  const variant = computed.fontVariant === "small-caps" ? "small-caps" : "";
   const weight = computed.fontWeight && computed.fontWeight !== "normal" ? computed.fontWeight : "";
   const stretch = computed.fontStretch && computed.fontStretch !== "normal" && isCanvasFontStretchValue(computed.fontStretch)
     ? computed.fontStretch
@@ -145,7 +179,8 @@ function setCanvasContextProperty(
   const nextValue = property === "letterSpacing" && (!value || value === "normal")
       ? "0px"
       : value;
-  (context as unknown as Record<typeof property, string>)[property] = nextValue;
+  const properties = context as unknown as Record<typeof property, string>;
+  if (properties[property] !== nextValue) properties[property] = nextValue;
   return true;
 }
 
@@ -196,6 +231,7 @@ function getElementMeasuredWidth(element: HTMLElement) {
 }
 
 function getTabularGlyphCache(computed: CSSStyleDeclaration) {
+  watchFontLoads(document.fonts);
   const signature = getInlineTextStyleSignature(computed);
   let cache = tabularGlyphMeasurementCache.get(signature);
   if (!cache) {

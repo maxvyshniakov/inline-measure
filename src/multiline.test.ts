@@ -162,6 +162,21 @@ describe("computeMultilineMinContentWidth", () => {
     expect(secondWidth).toBe(10);
     expect([...calls.values()].every((count) => count === 1)).toBe(true);
   });
+
+  it("reuses a shaped candidate across feasibility passes without slicing it again", () => {
+    const prepared = prepareWrapText("aa bbb cccc");
+    const measurements: string[] = [];
+    const slice = vi.spyOn(String.prototype, "slice");
+    const width = computeMultilineMinContentWidth({
+      ...prepared, lines: 2,
+      measureContent: (value) => { measurements.push(value); return value.length; },
+    });
+    const slices = slice.mock.calls.length;
+    slice.mockRestore();
+    expect(width).toBe(6);
+    // Each exact substring is prepared once, plus the initial full-text bound.
+    expect(slices).toBeLessThanOrEqual(measurements.length + 1);
+  });
 });
 
 describe("measureInlineTextMultilineWidth", () => {
@@ -188,6 +203,52 @@ describe("measureInlineTextMultilineWidth", () => {
     }
     return lines;
   }
+
+  it("narrows an exact estimate when native wrapping fits at an earlier break", () => {
+    stubCanvasMeasurement((value) => value.length * 2);
+    const source = createSource();
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") return { width: 16 } as DOMRect;
+        const width = Number.parseFloat(this.style.width) || 1_000_000;
+        return { height: countGreedyLines(this.textContent ?? "", width, 1) * 10, width } as DOMRect;
+      });
+    expect(measureInlineTextMultilineWidth({
+      accuracy: "exact", sourceElement: source, text: "aa bb cc", lines: 2,
+    })).toBe(5);
+    source.remove();
+  });
+
+  it("uses native word spacing to establish a feasible exact upper bound", () => {
+    stubCanvasMeasurement((value) => value.length);
+    const source = createSource();
+    source.style.wordSpacing = "4px";
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      const nativeWidth = this.style.wordSpacing === "4px" ? 7 : 3;
+      return { width: this.style.width === "max-content" ? nativeWidth : Number.parseFloat(this.style.width), height: 10 } as DOMRect;
+    });
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(7);
+    expect(measureInlineTextMultilineWidth({
+      accuracy: "exact", sourceElement: source, text: "a\u00a0b", lines: 2,
+    })).toBe(7);
+    source.remove();
+  });
+
+  it("proves a nearby exact minimum with a bounded number of native reads", () => {
+    stubCanvasMeasurement((value) => value.length + 1);
+    const source = createSource();
+    const reads = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const width = Number.parseFloat(this.style.width) || 1_000_000;
+        return { width, height: countGreedyLines(this.textContent ?? "", width, 1) * 10 } as DOMRect;
+      });
+    expect(measureInlineTextMultilineWidth({
+      accuracy: "exact", sourceElement: source, text: "aa bb cc", lines: 2,
+    })).toBe(5);
+    expect(reads.mock.calls.length).toBeLessThanOrEqual(4);
+    source.remove();
+  });
+
 
   it("adds letter spacing exactly once in the fast path when canvas does not support it", () => {
     stubCanvasMeasurement((value) => value.length);
@@ -256,7 +317,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const source = createSource();
     const readRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 8 } as DOMRect;
         }
         const width = Number.parseFloat(this.style.width) || 1_000_000;
@@ -272,7 +333,7 @@ describe("measureInlineTextMultilineWidth", () => {
       text: "aa bb cc",
       lines: 2,
     })).toBe(5);
-    expect(readRect).toHaveBeenCalledTimes(2);
+    expect(readRect.mock.calls.length).toBeLessThanOrEqual(8);
     expect(readOffsetWidth).not.toHaveBeenCalled();
     source.remove();
   });
@@ -284,7 +345,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const source = createSource();
     const readRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 16 } as DOMRect;
         }
         const width = Number.parseFloat(this.style.width) || 1_000_000;
@@ -309,7 +370,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const source = createSource();
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 12 } as DOMRect;
         }
         const width = Number.parseFloat(this.style.width) || 1_000_000;
@@ -338,7 +399,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const source = createSource();
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 100.4 } as DOMRect;
         }
         const width = Number.parseFloat(this.style.width) || 1_000_000;
@@ -378,7 +439,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const probeTexts: string[] = [];
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 8 } as DOMRect;
         }
         probeTexts.push(this.textContent ?? "");
@@ -406,7 +467,7 @@ describe("measureInlineTextMultilineWidth", () => {
     const probeWordSpacings: string[] = [];
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
       .mockImplementation(function (this: HTMLElement) {
-        if (this.style.whiteSpace !== "normal") {
+        if (this.style.whiteSpace !== "normal" || this.style.width === "max-content") {
           return { width: 8 } as DOMRect;
         }
         probeWordSpacings.push(this.style.wordSpacing);
@@ -421,7 +482,8 @@ describe("measureInlineTextMultilineWidth", () => {
       lines: 2,
     });
 
-    expect(probeWordSpacings).toEqual(["3px", "3px"]);
+    expect(probeWordSpacings.length).toBeGreaterThan(0);
+    expect(probeWordSpacings.every((value) => value === "3px")).toBe(true);
     source.remove();
   });
 

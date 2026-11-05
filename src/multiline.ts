@@ -4,7 +4,6 @@ import {
   applyInlineMeasurementStyles,
   createCanvasTextMeasurer,
   createInlineMeasurementRoot,
-  createInlineTextMeasurementNode,
   type InlineMeasureAccuracy,
 } from "./index.js";
 
@@ -150,18 +149,23 @@ function verifyExactMultilineContentWidth({
         && candidate.scrollWidth <= Math.ceil(width);
     };
 
-    if (fits(canvasContentWidth)) return canvasContentWidth;
-
-    const singleLineNode = createInlineTextMeasurementNode({
-      sourceElement,
-      text: collapsed,
-    });
-    singleLineNode.style.textTransform = "none";
-    root.appendChild(singleLineNode);
-    const boxWidth = getHorizontalBoxWidthFromComputed(computed);
-    let hi = Math.ceil(singleLineNode.getBoundingClientRect().width - boxWidth);
-    let lo = canvasContentWidth;
-    hi = Math.max(hi, lo + 1);
+    let lo = -1;
+    let hi = canvasContentWidth;
+    if (fits(hi)) {
+      // Most Canvas estimates already are the native minimum. Prove it with
+      // the neighboring integer before paying for a downward search.
+      if (hi === 0 || !fits(hi - 1)) return hi;
+      hi -= 1;
+      // Rounding commonly makes the estimate just one pixel too wide. Prove
+      // that nearby minimum before searching the whole remaining interval.
+      if (hi === 0 || !fits(hi - 1)) return hi;
+      hi -= 1;
+    } else {
+      // Measure an upper bound with the same native wrap styles, including
+      // word spacing and OpenType features, rather than another Canvas guess.
+      candidate.style.width = "max-content";
+      hi = Math.max(Math.ceil(candidate.getBoundingClientRect().width), hi + 1);
+    }
 
     while (hi - lo > 1) {
       const middle = Math.floor((lo + hi) / 2);
@@ -195,15 +199,18 @@ export function computeMultilineMinContentWidth({
     measurementCache.set(value, measured);
     return measured;
   };
-  const measureCandidate = (start: number, opportunity: WrapOpportunity) => {
-    let contentStart = start;
-    while (normalized[contentStart] === " ") contentStart += 1;
-
-    const contentEnd = trimTrailingCollapsibleSpacePosition(normalized, opportunity.position);
-
-    const candidate = normalized.slice(contentStart, contentEnd)
-      + (opportunity.softHyphen ? "-" : "");
-    return measureCached(candidate);
+  const contentEnds = opportunities.map((opportunity) =>
+    trimTrailingCollapsibleSpacePosition(normalized, opportunity.position));
+  const rows = new Map<number, { contentStart: number; widths: (number | undefined)[] }>();
+  const getRow = (start: number) => {
+    let row = rows.get(start);
+    if (!row) {
+      let contentStart = start;
+      while (normalized[contentStart] === " ") contentStart += 1;
+      row = { contentStart, widths: [] };
+      rows.set(start, row);
+    }
+    return row;
   };
   const isFeasible = (width: number) => {
     let start = 0;
@@ -214,9 +221,20 @@ export function computeMultilineMinContentWidth({
       if (usedLines > lines) return false;
 
       let farthestFittingOpportunity: WrapOpportunity | undefined;
-      for (const opportunity of opportunities) {
+      const row = getRow(start);
+      for (let index = 0; index < opportunities.length; index += 1) {
+        const opportunity = opportunities[index]!;
         if (opportunity.position <= start) continue;
-        if (measureCandidate(start, opportunity) <= width) {
+        let candidateWidth = row.widths[index];
+        if (candidateWidth === undefined) {
+          // Keep full-substring shaping, including kerning and signed spacing.
+          // Later feasibility passes use numbers without constructing strings.
+          const candidate = normalized.slice(row.contentStart, contentEnds[index])
+            + (opportunity.softHyphen ? "-" : "");
+          candidateWidth = measureCached(candidate);
+          row.widths[index] = candidateWidth;
+        }
+        if (candidateWidth <= width) {
           farthestFittingOpportunity = opportunity;
         }
       }

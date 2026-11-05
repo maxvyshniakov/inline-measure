@@ -16,7 +16,10 @@
   Wrap any new heavy script as `repo-kit heavy <slots> <command>`.
 
 ## Browser and visual
-- None: the package has no Storybook. Tests run in happy-dom.
+- Independent native-DOM oracle and timing captures:
+  [commands, setup, baselines and measurement policy](../performance/README.md).
+- The package has no Storybook of its own. Consumer demos live in Data Grid;
+  they are independent of this harness. Unit tests still run in happy-dom.
 
 ## Pins
 - `@maxvyshniakov/repo-kit` exact: each commit's gate is the kit its lockfile records. Raise it with each repo-kit

@@ -38,6 +38,37 @@ function stubCanvasMeasurement(widthPerCharacter: number) {
 }
 
 describe("inline-measure", () => {
+  it("reuses canvas state for repeated measurements and restores interleaved styles", () => {
+    const values: Record<string, string> = {
+      font: "10px sans-serif", fontKerning: "auto", fontStretch: "normal",
+      fontVariantCaps: "normal", letterSpacing: "0px",
+    };
+    const writes: string[] = [];
+    const context = {
+      measureText(value: string) {
+        return { width: value.length * Number.parseFloat(values.font!) + Number.parseFloat(values.letterSpacing!) };
+      },
+    };
+    for (const property of Object.keys(values)) Object.defineProperty(context, property, {
+      get: () => values[property],
+      set: (value: string) => { writes.push(property); values[property] = value; },
+    });
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => context) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const styled = createCanvasTextMeasurer({
+      font: "16px Inter", fontKerning: "none", fontStretch: "normal",
+      fontVariantCaps: "small-caps", letterSpacing: "1px",
+    } as CSSStyleDeclaration);
+    const normal = createCanvasTextMeasurer("20px Inter");
+
+    expect(styled("AB")).toBe(33);
+    const firstWrites = writes.length;
+    expect(styled("CD")).toBe(33);
+    expect(writes).toHaveLength(firstWrites);
+    expect(normal("AB")).toBe(40);
+    expect(styled("AB")).toBe(33);
+    expect(values).toMatchObject({ fontKerning: "none", fontVariantCaps: "small-caps", letterSpacing: "1px" });
+  });
+
   it("measures text with a fast canvas path and includes inline chrome", () => {
     stubCanvasMeasurement(8);
     const source = document.createElement("span");
@@ -304,6 +335,7 @@ describe("inline-measure", () => {
 
   it("resets font stretch instead of assigning unsupported percentage values", () => {
     const fontStretchSetter = vi.fn();
+    let stretch = "";
     const context = {
       font: "",
       fontKerning: "normal",
@@ -313,7 +345,8 @@ describe("inline-measure", () => {
     };
     Object.defineProperty(context, "fontStretch", {
       configurable: true,
-      set: fontStretchSetter,
+      get: () => stretch,
+      set: (value: string) => { fontStretchSetter(value); stretch = value; },
     });
     HTMLCanvasElement.prototype.getContext = vi.fn(
       () => context,
@@ -362,6 +395,77 @@ describe("inline-measure", () => {
     measureText("Folder");
 
     expect(context.font).toBe("500 14px Inter, sans-serif");
+  });
+
+  it("omits numeric variants that are invalid in a canvas font shorthand", () => {
+    let font = "10px sans-serif";
+    const context = {
+      get font() { return font; },
+      set font(value: string) { if (!value.includes("tabular-nums")) font = value; },
+      measureText: (value: string) => ({ width: value.length * Number(font.match(/(\d+)px/)?.[1]) }),
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => context) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const measure = createCanvasTextMeasurer({
+      font: "", fontFamily: "Inter", fontSize: "14px", fontStyle: "normal",
+      fontVariant: "tabular-nums", fontWeight: "400", fontStretch: "normal",
+      fontKerning: "auto", fontVariantCaps: "normal", letterSpacing: "normal",
+    } as CSSStyleDeclaration);
+    expect(measure("AB")).toBe(28);
+    expect(context.font).toBe("400 14px Inter");
+  });
+
+  it.each(["loadingdone", "loading"])("refreshes a cached canvas font after %s", async (event) => {
+    const originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
+    const fonts = new EventTarget();
+    const ready = Promise.resolve(fonts);
+    Object.defineProperty(fonts, "ready", { value: ready });
+    Object.defineProperty(document, "fonts", { configurable: true, value: fonts });
+    let loadedWidth = 5;
+    const contexts = new WeakMap<HTMLCanvasElement, { font: string; measureText: (value: string) => { width: number } }>();
+    HTMLCanvasElement.prototype.getContext = vi.fn(function (this: HTMLCanvasElement) {
+      let context = contexts.get(this);
+      if (!context) {
+        const resolvedWidth = loadedWidth;
+        context = { font: "", measureText: (value: string) => ({ width: value.length * resolvedWidth }) };
+        contexts.set(this, context);
+      }
+      return context;
+    }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const measure = createCanvasTextMeasurer("14px Late Font");
+    try {
+      expect(measure("AB")).toBe(10);
+      loadedWidth = 9;
+      fonts.dispatchEvent(new Event(event));
+      await ready;
+      expect(measure("AB")).toBe(18);
+    } finally {
+      if (originalFonts) Object.defineProperty(document, "fonts", originalFonts);
+      else Reflect.deleteProperty(document, "fonts");
+    }
+  });
+
+  it("preserves shorthand caps and stretch across string and computed-style measurers", () => {
+    const values = { font: "10px sans-serif", fontStretch: "normal", fontVariantCaps: "normal" };
+    const context = {
+      get font() { return values.font; },
+      set font(value: string) {
+        values.font = value;
+        values.fontVariantCaps = value.includes("small-caps") ? "small-caps" : "normal";
+        values.fontStretch = value.includes("condensed") ? "condensed" : "normal";
+      },
+      get fontStretch() { return values.fontStretch; },
+      set fontStretch(value: string) { values.fontStretch = value; },
+      get fontVariantCaps() { return values.fontVariantCaps; },
+      set fontVariantCaps(value: string) { values.fontVariantCaps = value; },
+      measureText: (value: string) => ({ width: value.length * (values.fontVariantCaps === "small-caps" ? 9 : 8) * (values.fontStretch === "condensed" ? 0.8 : 1) }),
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => context) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    const small = createCanvasTextMeasurer("small-caps condensed 20px Georgia");
+    const normal = createCanvasTextMeasurer({ font: "small-caps condensed 20px Georgia", fontVariantCaps: "normal", fontStretch: "normal" } as CSSStyleDeclaration);
+    expect(small("ab")).toBe(14.4);
+    expect(small("ab")).toBe(14.4);
+    expect(normal("ab")).toBe(16);
+    expect(small("ab")).toBe(14.4);
   });
 
   it("creates offscreen roots for batched exact measurement", () => {

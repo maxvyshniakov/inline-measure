@@ -4,6 +4,27 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Changed
+
+- Repeated Canvas measurements reuse unchanged font and text settings. Multiline
+  feasibility passes reuse whole shaped candidate widths by numeric position,
+  avoiding repeated substring construction without summing isolated glyphs.
+
+### Fixed
+
+- A numeric font variant no longer makes the Canvas font shorthand invalid when
+  the computed shorthand is empty; fast measurement selects the intended font.
+- Cached Canvas font resolution and tabular glyph calibration refresh after
+  asynchronous font loading, including browsers that omit `loadingdone`.
+- Exact multiline measurement checks the neighboring integer and searches
+  downward when native wrapping fits more narrowly than the Canvas estimate.
+
+### Added
+
+- An independent Chromium, Firefox and WebKit measurement harness records
+  native-DOM correctness, cold/warm batch timings and deterministic work counts,
+  with compatible-baseline comparisons and strict regression checking.
+
 ## 0.3.0 - 2026-11-03
 
 ### Breaking
