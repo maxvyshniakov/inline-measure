@@ -4,6 +4,13 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Fixed
+
+- Reuse a bounded, detached pair of native multiline probes instead of creating
+  and restyling them for every exact measurement. Native minimum-width and
+  overflow checks remain intact; changed text, typography and loaded fonts are
+  measured again, including nested calls and recovery after a failed DOM read.
+
 ## 0.3.2 - 2026-11-05
 
 ### Fixed

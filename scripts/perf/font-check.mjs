@@ -34,6 +34,34 @@ try {
       await page.goto(`${server.resolvedUrls.local[0]}scripts/perf/index.html`);
       const result = await page.evaluate(async () => {
         const { createCanvasTextMeasurer, measureInlineTextWidth } = await import("/src/index.ts");
+        const { measureInlineTextMultilineWidth } = await import("/src/multiline.ts");
+        const multiline = source => measureInlineTextMultilineWidth({
+          sourceElement: source, text: source.textContent, lines: 2, accuracy: "exact",
+        });
+        // Independent native minimum, including normal line-height and numeric
+        // features. No package probes or Canvas estimates participate here.
+        const nativeMultiline = source => {
+          const probe = source.cloneNode(true);
+          Object.assign(probe.style, {
+            position: "absolute", display: "block", whiteSpace: "normal",
+            width: "max-content", padding: "0", border: "0",
+            hyphens: "manual", overflowWrap: "normal", wordBreak: "normal",
+          });
+          document.body.append(probe);
+          try {
+            const baseline = probe.getBoundingClientRect();
+            let lo = -1;
+            let hi = Math.ceil(baseline.width);
+            while (hi - lo > 1) {
+              const middle = Math.floor((lo + hi) / 2);
+              probe.style.width = `${middle}px`;
+              if (probe.getBoundingClientRect().height <= baseline.height * 2 + 0.5
+                && probe.scrollWidth <= middle) hi = middle;
+              else lo = middle;
+            }
+            return hi;
+          } finally { probe.remove(); }
+        };
         await document.fonts.ready;
         const source = document.createElement("span");
         source.style.cssText = 'font: 14px LateProbe, monospace; display: inline-block; white-space: pre; font-variant-numeric: tabular-nums;';
@@ -42,6 +70,7 @@ try {
         const canvas = createCanvasTextMeasurer(getComputedStyle(source));
         const beforeCanvas = canvas(source.textContent);
         const beforeAuto = measureInlineTextWidth({ sourceElement: source, text: source.textContent });
+        const beforeMultiline = multiline(source);
         const events = { loading: 0, loadingdone: 0 };
         document.fonts.addEventListener("loading", () => { events.loading += 1; });
         document.fonts.addEventListener("loadingdone", () => { events.loadingdone += 1; });
@@ -51,11 +80,15 @@ try {
         await document.fonts.ready;
         const afterCanvas = canvas(source.textContent);
         const afterAuto = measureInlineTextWidth({ sourceElement: source, text: source.textContent });
+        const afterMultiline = multiline(source);
+        const nativeMultilineWidth = nativeMultiline(source);
         const native = source.getBoundingClientRect().width;
         source.style.fontVariantNumeric = "normal";
         const plainNative = source.getBoundingClientRect().width;
         const firstCycle = { beforeCanvas, beforeAuto, afterCanvas, afterAuto, native, plainNative, events,
-          passed: events.loading > 0 && Math.abs(afterCanvas - beforeCanvas) > 1 && Math.abs(afterCanvas - plainNative) < 1 && Math.abs(afterAuto - native) < 1,
+          beforeMultiline, afterMultiline, nativeMultilineWidth,
+          passed: events.loading > 0 && Math.abs(afterCanvas - beforeCanvas) > 1 && Math.abs(afterCanvas - plainNative) < 1 && Math.abs(afterAuto - native) < 1
+            && beforeMultiline !== afterMultiline && afterMultiline === nativeMultilineWidth,
         };
         const overlapping = document.createElement("span");
         overlapping.style.cssText = 'font:14px OverlappingProbe,monospace;display:inline-block;white-space:pre;font-variant-numeric:tabular-nums';
@@ -70,20 +103,25 @@ try {
         const overlappingCanvas = createCanvasTextMeasurer(getComputedStyle(overlapping));
         const fallbackCanvas = overlappingCanvas(overlapping.textContent);
         const fallbackAuto = measureInlineTextWidth({ sourceElement: overlapping, text: overlapping.textContent });
+        const fallbackMultiline = multiline(overlapping);
         await requiredFace.load();
         // Deliberately do not await fonts.ready: another face is still pending.
         const statusAfter = document.fonts.status;
         const requiredCanvas = overlappingCanvas(overlapping.textContent);
         const requiredAuto = measureInlineTextWidth({ sourceElement: overlapping, text: overlapping.textContent });
+        const requiredMultiline = multiline(overlapping);
+        const requiredNativeMultiline = nativeMultiline(overlapping);
         const requiredNative = overlapping.getBoundingClientRect().width;
         overlapping.style.fontVariantNumeric = "normal";
         const requiredPlainNative = overlapping.getBoundingClientRect().width;
         const overlappingCycle = { statusBefore, statusAfter, fallbackCanvas, fallbackAuto,
           requiredCanvas, requiredAuto, requiredNative, requiredPlainNative,
+          fallbackMultiline, requiredMultiline, requiredNativeMultiline,
           passed: statusBefore === "loading" && statusAfter === "loading"
             && Math.abs(fallbackAuto - requiredNative) > 1
             && Math.abs(requiredAuto - requiredNative) < 1
-            && Math.abs(requiredCanvas - requiredPlainNative) < 1,
+            && Math.abs(requiredCanvas - requiredPlainNative) < 1
+            && fallbackMultiline !== requiredMultiline && requiredMultiline === requiredNativeMultiline,
         };
         await blockerLoaded;
         await document.fonts.ready;

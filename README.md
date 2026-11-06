@@ -28,6 +28,9 @@ fits in `lines` lines, using the same `accuracy` options.
 `fast` and `auto` use Canvas estimates and Unicode break opportunities;
 `exact` verifies native wrapping and searches both narrower and wider integer
 content widths. The native check includes horizontal overflow of long tokens.
+Exact multiline calls reuse one detached probe pair per document, refreshing
+text and changed typography on each call. Widths and heights are not cached;
+the native check runs again and removes its probes before returning.
 
 Reusable Canvas measurers and tabular glyph calibration refresh after font
 loading cycles. Load the required fonts before the first measurement so its

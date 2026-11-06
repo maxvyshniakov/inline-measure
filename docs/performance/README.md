@@ -110,6 +110,12 @@ supported gain and was rejected. The two-node nearby bracket
 the final implementation adopts it. These experiments retain their original
 source hashes and raw samples.
 
+The subsequent [WebKit exact-multiline repair](2026-11-06-webkit-exact.md)
+retains that complete native proof while reusing a detached pair of probes.
+It removes the remaining regression against 0.3.0 without caching answers or
+loosening accuracy. The delayed-font check also verifies exact multiline
+minimum widths while font loading overlaps an unrelated pending face.
+
 ## Coverage limits
 
 These are synthetic label and cell workloads, not a Data Grid resize benchmark.

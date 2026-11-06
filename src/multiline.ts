@@ -116,6 +116,54 @@ function createMultilineWrapProbe(
   return probe;
 }
 
+interface MultilineWrapProbes {
+  root: HTMLElement;
+  baseline: HTMLElement;
+  candidate: HTMLElement;
+  styleKey: string;
+  busy: boolean;
+}
+
+// Retain only one detached pair per document, never measured widths or heights.
+// Reattaching it still lets the browser resolve loaded fonts and native breaks.
+const multilineWrapProbes = new WeakMap<Document, MultilineWrapProbes>();
+
+function acquireMultilineWrapProbes(
+  ownerDocument: Document,
+  computed: CSSStyleDeclaration,
+  text: string,
+  width: number,
+) {
+  const styleValues = WRAP_TEXT_STYLE_PROPERTIES.map(property => computed[property]);
+  const styleKey = styleValues.join("\0");
+  let probes = multilineWrapProbes.get(ownerDocument);
+  if (!probes || probes.busy) {
+    // A nested measurement must not overwrite the outer call's probes.
+    const root = createInlineMeasurementRoot(ownerDocument);
+    const baseline = createMultilineWrapProbe(ownerDocument, computed, text, "1000000px");
+    const candidate = createMultilineWrapProbe(ownerDocument, computed, text, `${width}px`);
+    root.append(baseline, candidate);
+    const fresh = { root, baseline, candidate, styleKey, busy: false };
+    if (!probes) multilineWrapProbes.set(ownerDocument, fresh);
+    probes = fresh;
+  } else {
+    probes.baseline.textContent = text;
+    probes.candidate.textContent = text;
+    probes.candidate.style.width = `${width}px`;
+    if (probes.styleKey !== styleKey) {
+      for (const probe of [probes.baseline, probes.candidate]) {
+        for (let index = 0; index < WRAP_TEXT_STYLE_PROPERTIES.length; index += 1) {
+          probe.style[WRAP_TEXT_STYLE_PROPERTIES[index] as never] = styleValues[index] as never;
+        }
+        probe.style.textTransform = "none";
+      }
+      probes.styleKey = styleKey;
+    }
+  }
+  probes.busy = true;
+  return probes;
+}
+
 function verifyExactMultilineContentWidth({
   canvasContentWidth,
   collapsed,
@@ -130,18 +178,11 @@ function verifyExactMultilineContentWidth({
   sourceElement: HTMLElement;
 }) {
   const ownerDocument = sourceElement.ownerDocument;
-  const root = createInlineMeasurementRoot(ownerDocument);
-  const baseline = createMultilineWrapProbe(ownerDocument, computed, collapsed, "1000000px");
-  const candidate = createMultilineWrapProbe(
-    ownerDocument,
-    computed,
-    collapsed,
-    `${canvasContentWidth}px`,
-  );
-  root.append(baseline, candidate);
-  ownerDocument.body.appendChild(root);
+  const probes = acquireMultilineWrapProbes(ownerDocument, computed, collapsed, canvasContentWidth);
+  const { root, baseline, candidate } = probes;
 
   try {
+    ownerDocument.body.appendChild(root);
     const singleLineHeight = baseline.getBoundingClientRect().height;
     const fits = (width: number) => {
       candidate.style.width = `${width}px`;
@@ -179,6 +220,7 @@ function verifyExactMultilineContentWidth({
     return hi;
   } finally {
     root.remove();
+    probes.busy = false;
   }
 }
 

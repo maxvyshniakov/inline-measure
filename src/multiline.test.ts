@@ -249,6 +249,89 @@ describe("measureInlineTextMultilineWidth", () => {
     source.remove();
   });
 
+  it("bounds native probe allocation while refreshing text and typography", () => {
+    stubCanvasMeasurement(value => value.length);
+    const source = createSource();
+    const children = document.body.childElementCount;
+    const createElement = vi.spyOn(document, "createElement");
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const width = Number.parseFloat(this.style.width) || 1_000_000;
+        const charWidth = this.style.fontSize === "20px" ? 2 : 1;
+        return { width, height: countGreedyLines(this.textContent ?? "", width, charWidth) * 10 } as DOMRect;
+      });
+
+    for (let repeat = 0; repeat < 3; repeat += 1) {
+      source.style.fontSize = "10px";
+      expect(measureInlineTextMultilineWidth({
+        accuracy: "exact", sourceElement: source, text: "aa bb cc", lines: 2,
+      })).toBe(5);
+      source.style.fontSize = "20px";
+      expect(measureInlineTextMultilineWidth({
+        accuracy: "exact", sourceElement: source, text: "aaa bb ccc", lines: 2,
+      })).toBe(12);
+      expect(document.body.childElementCount).toBe(children);
+    }
+
+    const probeAllocations = createElement.mock.calls.filter(([tag]) => tag === "span" || tag === "div");
+    expect(probeAllocations.length).toBeLessThanOrEqual(3);
+    source.remove();
+  });
+
+  it("keeps an outer exact measurement intact during a nested measurement", () => {
+    stubCanvasMeasurement(value => value.length);
+    const source = createSource();
+    source.style.fontSize = "10px";
+    const nestedSource = createSource();
+    nestedSource.style.fontSize = "20px";
+    const children = document.body.childElementCount;
+    let nestedWidth: number | undefined;
+    let nested = false;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        if (!nested && nestedWidth === undefined) {
+          nested = true;
+          nestedWidth = measureInlineTextMultilineWidth({
+            accuracy: "exact", sourceElement: nestedSource, text: "aaa bb ccc", lines: 2,
+          });
+          nested = false;
+        }
+        const width = Number.parseFloat(this.style.width) || 1_000_000;
+        const charWidth = this.style.fontSize === "20px" ? 2 : 1;
+        return { width, height: countGreedyLines(this.textContent ?? "", width, charWidth) * 10 } as DOMRect;
+      });
+    expect(measureInlineTextMultilineWidth({
+      accuracy: "exact", sourceElement: source, text: "aa bb cc", lines: 2,
+    })).toBe(5);
+    expect(nestedWidth).toBe(12);
+    expect(document.body.childElementCount).toBe(children);
+    source.remove();
+    nestedSource.remove();
+  });
+
+  it("releases detached probes after a failed native read", () => {
+    stubCanvasMeasurement(value => value.length);
+    const source = createSource();
+    source.style.fontSize = "10px";
+    const children = document.body.childElementCount;
+    const readRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementationOnce(() => { throw new Error("native read failed"); });
+    const input = { accuracy: "exact" as const, sourceElement: source, text: "aa bb cc", lines: 2 };
+    expect(() => measureInlineTextMultilineWidth(input)).toThrow("native read failed");
+    expect(document.body.childElementCount).toBe(children);
+    readRect.mockImplementation(function (this: HTMLElement) {
+      const width = Number.parseFloat(this.style.width) || 1_000_000;
+      return { width, height: countGreedyLines(this.textContent ?? "", width, 1) * 10 } as DOMRect;
+    });
+    const createElement = vi.spyOn(document, "createElement");
+    for (let repeat = 0; repeat < 3; repeat += 1) {
+      expect(measureInlineTextMultilineWidth(input)).toBe(5);
+    }
+    expect(createElement.mock.calls.filter(([tag]) => tag === "span" || tag === "div")).toHaveLength(0);
+    expect(document.body.childElementCount).toBe(children);
+    source.remove();
+  });
+
 
   it("adds letter spacing exactly once in the fast path when canvas does not support it", () => {
     stubCanvasMeasurement((value) => value.length);
