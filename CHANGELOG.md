@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.3.3 - 2026-11-06
+
 ### Fixed
 
 - Reuse a bounded, detached pair of native multiline probes instead of creating
