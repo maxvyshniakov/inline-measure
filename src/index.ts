@@ -1,7 +1,13 @@
 import {
   applyTextTransform,
   getHorizontalBoxWidthFromComputed,
-  tabularGlyphMeasurementCache,
+  getOrCreateTabularGlyphCache,
+  measureCanvasTextFromComputed,
+  measureCanvasTextWithShorthand,
+  parseCssPixelValue as parseCssPixelValueInternal,
+  type TabularGlyphCacheEntry,
+  watchFontLoads,
+  watchPendingFontFaces,
 } from "./internal.js";
 
 export type InlineMeasureAccuracy = "auto" | "fast" | "exact";
@@ -22,6 +28,10 @@ export const INLINE_MEASUREMENT_ROOT_STYLES = {
   pointerEvents: "none",
 } satisfies InlineMeasureStyleMap;
 
+// Indices 1..FONT_SHORTHAND_RESET_END are CSS properties reset by assigning
+// `style.font`, so they are rewritten whenever the shorthand changes.
+const FONT_SHORTHAND_RESET_END = 13;
+
 const INLINE_TEXT_STYLE_PROPERTIES = [
   "font",
   "fontFamily",
@@ -36,8 +46,8 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
   "fontVariantNumeric",
   "fontVariationSettings",
   "fontWeight",
-  "letterSpacing",
   "lineHeight",
+  "letterSpacing",
   "wordSpacing",
   "textTransform",
   "paddingLeft",
@@ -52,62 +62,34 @@ const INLINE_TEXT_STYLE_PROPERTIES = [
   "gap",
 ] as const satisfies ReadonlyArray<keyof CSSStyleDeclaration>;
 
-let measurementCanvas: HTMLCanvasElement | null = null;
-interface CanvasFontState {
-  font: string;
-  stretch: string;
-  caps: string;
-}
-let canvasFonts = new WeakMap<CanvasRenderingContext2D, CanvasFontState>();
-const watchedFontSets = new WeakSet<FontFaceSet>();
-const watchedPendingFaces = new WeakSet<FontFace>();
+const TABULAR_NUMERIC_RE = /\b(?:tabular-nums|tabular|tnum)\b/;
 
-function invalidateFontMeasurements() {
-  // Safari can keep a resolved fallback font in the Canvas context even
-  // when the declared string is unchanged. A fresh context resolves again.
-  measurementCanvas = null;
-  canvasFonts = new WeakMap();
-  tabularGlyphMeasurementCache.clear();
+interface ExactSingleLineProbe {
+  root: HTMLElement;
+  node: HTMLElement;
+  styleValues: string[];
+  busy: boolean;
 }
 
-function watchPendingFontFaces(fonts: FontFaceSet | undefined, status = fonts?.status) {
-  if (status !== "loading" || !fonts?.forEach) return;
-  fonts.forEach(face => {
-    if (face.status === "loaded" || watchedPendingFaces.has(face)) return;
-    watchedPendingFaces.add(face);
-    // FontFaceSet.ready/loadingdone can wait for unrelated faces. A face's
-    // own promise resolves as soon as its fallback metrics become obsolete.
-    void face.loaded.then(invalidateFontMeasurements, invalidateFontMeasurements);
-  });
-}
-
-function watchFontLoads(fonts: FontFaceSet | undefined) {
-  if (!fonts?.addEventListener || watchedFontSets.has(fonts)) return;
-  watchedFontSets.add(fonts);
-  watchPendingFontFaces(fonts);
-  fonts.addEventListener("loadingdone", invalidateFontMeasurements);
-  fonts.addEventListener("loadingerror", invalidateFontMeasurements);
-  // Some WebKit FontFaceSet implementations dispatch loading but omit
-  // loadingdone. ready still resolves for that loading cycle.
-  fonts.addEventListener("loading", () => {
-    watchPendingFontFaces(fonts);
-    void fonts.ready.then(invalidateFontMeasurements);
-  });
-}
+// Retain only one detached probe per document, never measured widths.
+// Reattaching it still lets the browser resolve loaded fonts and native layout.
+const exactSingleLineProbes = /* @__PURE__ */ new WeakMap<Document, ExactSingleLineProbe>();
 
 export function applyInlineMeasurementStyles(
   element: HTMLElement,
   styles: InlineMeasureStyleMap,
 ) {
-  for (const [property, value] of Object.entries(styles)) {
+  const style = element.style;
+  for (const property in styles) {
+    if (!Object.prototype.hasOwnProperty.call(styles, property)) continue;
+    const value = styles[property as keyof InlineMeasureStyleMap];
     if (value === undefined) continue;
-    element.style[property as never] = value as never;
+    style[property as never] = value as never;
   }
 }
 
 export function parseCssPixelValue(value: string) {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parseCssPixelValueInternal(value);
 }
 
 export function getHorizontalBoxWidth(element: HTMLElement) {
@@ -117,7 +99,12 @@ export function getHorizontalBoxWidth(element: HTMLElement) {
 
 export function createInlineMeasurementRoot(ownerDocument: Document = document) {
   const root = ownerDocument.createElement("div");
-  applyInlineMeasurementStyles(root, INLINE_MEASUREMENT_ROOT_STYLES);
+  const style = root.style;
+  style.position = "absolute";
+  style.left = "-9999px";
+  style.top = "-9999px";
+  style.visibility = "hidden";
+  style.pointerEvents = "none";
   return root;
 }
 
@@ -125,125 +112,39 @@ export function createCanvasTextMeasurer(
   fontOrComputedStyle: string | CSSStyleDeclaration,
 ) {
   if (typeof document !== "undefined") watchFontLoads(document.fonts);
-  return (value: string) => {
-    if (typeof document === "undefined") return value.length;
-    measurementCanvas ??= document.createElement("canvas");
-    const context = measurementCanvas.getContext("2d");
-    if (!context) return value.length;
-
-    if (typeof fontOrComputedStyle === "string") {
-      const shorthand = setCanvasFont(context, fontOrComputedStyle);
-      setCanvasContextProperty(context, "fontKerning", "auto");
-      setCanvasContextProperty(context, "fontStretch", shorthand.stretch);
-      setCanvasContextProperty(context, "fontVariantCaps", shorthand.caps);
-      setCanvasContextProperty(context, "letterSpacing", "0px");
-    } else {
-      setCanvasFont(context, getCanvasFont(fontOrComputedStyle));
-      setCanvasContextProperty(context, "fontKerning", fontOrComputedStyle.fontKerning || "auto");
-      setCanvasContextProperty(context, "fontStretch", isCanvasFontStretchValue(fontOrComputedStyle.fontStretch) ? fontOrComputedStyle.fontStretch : "normal");
-      setCanvasContextProperty(context, "fontVariantCaps", fontOrComputedStyle.fontVariantCaps || "normal");
-      const supportsLetterSpacing = setCanvasContextProperty(
-        context,
-        "letterSpacing",
-        fontOrComputedStyle.letterSpacing,
-      );
-      const measuredWidth = context.measureText(value).width;
-      if (supportsLetterSpacing) return measuredWidth;
-
-      const letterSpacing = parseCssPixelValue(fontOrComputedStyle.letterSpacing);
-      return measuredWidth + letterSpacing * Math.max(0, Array.from(value).length - 1);
-    }
-
-    return context.measureText(value).width;
-  };
+  if (typeof fontOrComputedStyle === "string") {
+    return (value: string) => measureCanvasTextWithShorthand(fontOrComputedStyle, value);
+  }
+  return (value: string) => measureCanvasTextFromComputed(fontOrComputedStyle, value);
 }
 
-function setCanvasFont(context: CanvasRenderingContext2D, font: string) {
-  // Canvas normalizes the shorthand it reads back. Keep the requested string so
-  // an equivalent browser serialization does not cause repeated font parsing.
-  const previous = canvasFonts.get(context);
-  if (previous?.font === font) return previous;
-  setCanvasContextProperty(context, "fontStretch", "normal");
-  setCanvasContextProperty(context, "fontVariantCaps", "normal");
-  context.font = font;
-  const state = { font, stretch: context.fontStretch || "normal", caps: context.fontVariantCaps || "normal" };
-  canvasFonts.set(context, state);
-  return state;
-}
-
-function getCanvasFont(computed: CSSStyleDeclaration) {
-  if (computed.font) return computed.font;
-
-  const style = computed.fontStyle && computed.fontStyle !== "normal" ? computed.fontStyle : "";
-  // The font shorthand accepts CSS2 small-caps, not numeric variants such as
-  // tabular-nums. Passing those makes Canvas silently keep its previous font.
-  const variant = computed.fontVariant === "small-caps" ? "small-caps" : "";
-  const weight = computed.fontWeight && computed.fontWeight !== "normal" ? computed.fontWeight : "";
-  const stretch = computed.fontStretch && computed.fontStretch !== "normal" && isCanvasFontStretchValue(computed.fontStretch)
-    ? computed.fontStretch
-    : "";
-  const size = computed.fontSize || "16px";
-  const family = computed.fontFamily || "sans-serif";
-  return [style, variant, weight, stretch, size, family].filter(Boolean).join(" ");
-}
-
-function setCanvasContextProperty(
-  context: CanvasRenderingContext2D,
-  property: "fontKerning" | "fontStretch" | "fontVariantCaps" | "letterSpacing",
-  value: string,
+function getInlineTextStyleSignature(
+  computed: CSSStyleDeclaration,
+  fontStatus: string,
+  fontVariantNumeric: string,
+  letterSpacing: string,
+  textTransform: string,
 ) {
-  if (!(property in context)) return false;
-  if (property === "fontStretch" && !isCanvasFontStretchValue(value)) return false;
-
-  const nextValue = property === "letterSpacing" && (!value || value === "normal")
-      ? "0px"
-      : value;
-  const properties = context as unknown as Record<typeof property, string>;
-  if (properties[property] !== nextValue) properties[property] = nextValue;
-  return true;
+  return `${fontStatus}\u001f${computed.font}\u001f${computed.fontFamily}\u001f${computed.fontSize}\u001f${computed.fontStyle}\u001f${computed.fontVariant}\u001f${computed.fontFeatureSettings}\u001f${computed.fontKerning}\u001f${computed.fontOpticalSizing}\u001f${computed.fontStretch}\u001f${computed.fontWeight}\u001f${computed.fontVariantCaps}\u001f${fontVariantNumeric}\u001f${computed.fontVariationSettings}\u001f${computed.lineHeight}\u001f${letterSpacing}\u001f${computed.wordSpacing}\u001f${textTransform}`;
 }
 
-function isCanvasFontStretchValue(value: string) {
-  return value === "ultra-condensed"
-    || value === "extra-condensed"
-    || value === "condensed"
-    || value === "semi-condensed"
-    || value === "normal"
-    || value === "semi-expanded"
-    || value === "expanded"
-    || value === "extra-expanded"
-    || value === "ultra-expanded";
-}
-
-function getInlineTextStyleSignature(computed: CSSStyleDeclaration, fontStatus: string) {
-  return [
-    fontStatus,
-    computed.font,
-    computed.fontFamily,
-    computed.fontSize,
-    computed.fontStyle,
-    computed.fontVariant,
-    computed.fontFeatureSettings,
-    computed.fontKerning,
-    computed.fontOpticalSizing,
-    computed.fontStretch,
-    computed.fontWeight,
-    computed.fontVariantCaps,
-    computed.fontVariantNumeric,
-    computed.fontVariationSettings,
-    computed.lineHeight,
-    computed.letterSpacing,
-    computed.wordSpacing,
-    computed.textTransform,
-  ].join("\u001f");
-}
-
-function hasTabularNumericStyle(sourceElement: HTMLElement, computed: CSSStyleDeclaration) {
-  return /\b(tabular-nums|tabular|tnum)\b/.test([
-    sourceElement.className,
-    computed.fontVariantNumeric,
-    computed.fontFeatureSettings,
-  ].join(" "));
+function hasTabularNumericStyle(
+  sourceElement: HTMLElement,
+  computed: CSSStyleDeclaration,
+  fontVariantNumeric: string,
+) {
+  const className = sourceElement.className;
+  if (typeof className === "string" && className.length > 0 && TABULAR_NUMERIC_RE.test(className)) {
+    return true;
+  }
+  if (fontVariantNumeric && fontVariantNumeric !== "normal" && TABULAR_NUMERIC_RE.test(fontVariantNumeric)) {
+    return true;
+  }
+  const fontFeatureSettings = computed.fontFeatureSettings;
+  if (fontFeatureSettings && fontFeatureSettings !== "normal" && TABULAR_NUMERIC_RE.test(fontFeatureSettings)) {
+    return true;
+  }
+  return false;
 }
 
 function getElementMeasuredWidth(element: HTMLElement) {
@@ -251,117 +152,180 @@ function getElementMeasuredWidth(element: HTMLElement) {
   return rectWidth > 0 ? rectWidth : element.offsetWidth;
 }
 
-function getTabularGlyphCache(computed: CSSStyleDeclaration) {
+function getTabularGlyphCache(
+  computed: CSSStyleDeclaration,
+  fontVariantNumeric: string,
+  letterSpacing: string,
+  textTransform: string,
+): TabularGlyphCacheEntry {
   const fonts = document.fonts;
   const status = fonts?.status ?? "";
   watchFontLoads(fonts);
   // Catch faces added during an already active global loading cycle too.
   watchPendingFontFaces(fonts, status);
-  const signature = getInlineTextStyleSignature(computed, status);
-  let cache = tabularGlyphMeasurementCache.get(signature);
-  if (!cache) {
-    cache = new Map<string, number>();
-    tabularGlyphMeasurementCache.set(signature, cache);
-  }
-  return cache;
+  return getOrCreateTabularGlyphCache(
+    getInlineTextStyleSignature(computed, status, fontVariantNumeric, letterSpacing, textTransform),
+  );
 }
 
-function calibrateMissingTabularGlyphs({
-  boxWidth,
-  cache,
-  glyphs,
-  sourceElement,
-}: {
-  boxWidth: number;
-  cache: Map<string, number>;
-  glyphs: readonly string[];
-  sourceElement: HTMLElement;
-}) {
-  const missingGlyphs = Array.from(new Set(glyphs)).filter((glyph) => !cache.has(glyph));
-  if (missingGlyphs.length === 0) return;
+function copyInlineTextMeasurementStylesFromComputed(
+  target: HTMLElement,
+  computed: CSSStyleDeclaration,
+) {
+  const style = target.style;
+  style.width = "max-content";
+  style.minWidth = "0";
+  style.maxWidth = "none";
+  // Not inline-flex: a flex container drops a whitespace-only text run, so a
+  // space glyph or a whitespace-only string would measure 0px.
+  style.display = "inline-block";
+  style.boxSizing = "border-box";
+  style.whiteSpace = "pre";
+
+  for (let i = 0; i < INLINE_TEXT_STYLE_PROPERTIES.length; i += 1) {
+    const property = INLINE_TEXT_STYLE_PROPERTIES[i]!;
+    style[property as never] = computed[property] as never;
+  }
+}
+
+function calibrateMissingTabularGlyphs(
+  boxWidth: number,
+  cache: TabularGlyphCacheEntry,
+  missingGlyphs: readonly string[],
+  sourceElement: HTMLElement,
+  computed: CSSStyleDeclaration,
+) {
+  const uniqueMissing: string[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < missingGlyphs.length; i += 1) {
+    const glyph = missingGlyphs[i]!;
+    if (!seen.has(glyph)) {
+      seen.add(glyph);
+      uniqueMissing.push(glyph);
+    }
+  }
   const ownerDocument = sourceElement.ownerDocument;
   const root = createInlineMeasurementRoot(ownerDocument);
-  const nodes = missingGlyphs.map((glyph) => {
-    const node = createInlineTextMeasurementNode({ sourceElement, text: glyph });
+  const nodes: HTMLElement[] = [];
+  for (let i = 0; i < uniqueMissing.length; i += 1) {
+    const node = ownerDocument.createElement("span");
+    node.textContent = uniqueMissing[i]!;
+    copyInlineTextMeasurementStylesFromComputed(node, computed);
     root.appendChild(node);
-    return { glyph, node };
-  });
+    nodes.push(node);
+  }
 
   ownerDocument.body.appendChild(root);
   try {
-    for (const { glyph, node } of nodes) {
-      cache.set(glyph, Math.max(0, getElementMeasuredWidth(node) - boxWidth));
+    for (let i = 0; i < uniqueMissing.length; i += 1) {
+      const glyph = uniqueMissing[i]!;
+      const width = Math.max(0, getElementMeasuredWidth(nodes[i]!) - boxWidth);
+      if (glyph.length === 1) {
+        const code = glyph.charCodeAt(0);
+        if (code < 128) {
+          cache.ascii[code] = width;
+          continue;
+        }
+      }
+      cache.other.set(glyph, width);
     }
   } finally {
     root.remove();
   }
 }
 
-function measureTabularTextWidthCalibrated({
-  computed,
-  sourceElement,
-  text,
-}: InlineTextMeasureInput & { computed: CSSStyleDeclaration }) {
-  const measuredText = applyTextTransform(text, computed.textTransform);
-  if (!measuredText) return getHorizontalBoxWidthFromComputed(computed);
-
+function measureTabularTextWidthCalibrated(
+  sourceElement: HTMLElement,
+  text: string,
+  computed: CSSStyleDeclaration,
+  fontVariantNumeric: string,
+) {
+  const textTransform = computed.textTransform;
+  const measuredText = applyTextTransform(text, textTransform);
   const boxWidth = getHorizontalBoxWidthFromComputed(computed);
-  const glyphs = Array.from(measuredText);
-  const glyphCache = getTabularGlyphCache(computed);
-  calibrateMissingTabularGlyphs({
-    boxWidth,
-    cache: glyphCache,
-    glyphs,
-    sourceElement,
-  });
-  const letterSpacing = parseCssPixelValue(computed.letterSpacing);
-  const spacingWidth = letterSpacing > 0 && glyphs.length > 1
-    ? letterSpacing * (glyphs.length - 1)
+  if (!measuredText) return boxWidth;
+
+  const rawLetterSpacing = computed.letterSpacing;
+  const cache = getTabularGlyphCache(computed, fontVariantNumeric, rawLetterSpacing, textTransform);
+  const asciiWidths = cache.ascii;
+  const otherWidths = cache.other;
+  let contentWidth = 0;
+  let glyphCount = 0;
+  let missingGlyphs: string[] | null = null;
+
+  for (let i = 0; i < measuredText.length; ) {
+    const code = measuredText.charCodeAt(i);
+    if (code < 128) {
+      const width = asciiWidths[code]!;
+      if (width >= 0) {
+        contentWidth += width;
+      } else {
+        (missingGlyphs ??= []).push(measuredText[i]!);
+      }
+      i += 1;
+    } else {
+      const isPair = code >= 0xd800 && code <= 0xdbff && i + 1 < measuredText.length
+        && (measuredText.charCodeAt(i + 1) & 0xfc00) === 0xdc00;
+      const glyph = isPair ? measuredText.slice(i, i + 2) : measuredText[i]!;
+      const width = otherWidths.get(glyph);
+      if (width !== undefined) {
+        contentWidth += width;
+      } else {
+        (missingGlyphs ??= []).push(glyph);
+      }
+      i += isPair ? 2 : 1;
+    }
+    glyphCount += 1;
+  }
+
+  if (missingGlyphs !== null) {
+    calibrateMissingTabularGlyphs(boxWidth, cache, missingGlyphs, sourceElement, computed);
+    for (let i = 0; i < missingGlyphs.length; i += 1) {
+      const glyph = missingGlyphs[i]!;
+      if (glyph.length === 1 && glyph.charCodeAt(0) < 128) {
+        contentWidth += asciiWidths[glyph.charCodeAt(0)]!;
+      } else {
+        contentWidth += otherWidths.get(glyph) ?? 0;
+      }
+    }
+  }
+
+  const letterSpacing = parseCssPixelValueInternal(rawLetterSpacing);
+  const spacingWidth = letterSpacing > 0 && glyphCount > 1
+    ? letterSpacing * (glyphCount - 1)
     : 0;
-  const contentWidth = glyphs.reduce((total, glyph) => total + (glyphCache.get(glyph) ?? 0), 0);
 
   return contentWidth + spacingWidth + boxWidth;
+}
+
+function measureInlineTextWidthFastFromComputed(computed: CSSStyleDeclaration, text: string) {
+  const measuredText = applyTextTransform(text, computed.textTransform);
+  return measureCanvasTextFromComputed(computed, measuredText)
+    + getHorizontalBoxWidthFromComputed(computed);
 }
 
 export function measureInlineTextWidthFast({
   sourceElement,
   text,
 }: InlineTextMeasureInput) {
-  const computed = window.getComputedStyle(sourceElement);
-  const measuredText = applyTextTransform(text, computed.textTransform);
-  const measureText = createCanvasTextMeasurer(computed);
-
-  return measureText(measuredText) + getHorizontalBoxWidthFromComputed(computed);
+  return measureInlineTextWidthFastFromComputed(window.getComputedStyle(sourceElement), text);
 }
 
 export function measureInlineTextWidthAuto(input: InlineTextMeasureInput) {
   const computed = window.getComputedStyle(input.sourceElement);
-  if (hasTabularNumericStyle(input.sourceElement, computed)) {
-    return measureTabularTextWidthCalibrated({ ...input, computed });
+  const fontVariantNumeric = computed.fontVariantNumeric;
+  if (hasTabularNumericStyle(input.sourceElement, computed, fontVariantNumeric)) {
+    return measureTabularTextWidthCalibrated(input.sourceElement, input.text, computed, fontVariantNumeric);
   }
 
-  return measureInlineTextWidthFast(input);
+  return measureInlineTextWidthFastFromComputed(computed, input.text);
 }
 
 export function copyInlineTextMeasurementStyles(
   target: HTMLElement,
   sourceElement: HTMLElement,
 ) {
-  const computed = window.getComputedStyle(sourceElement);
-  applyInlineMeasurementStyles(target, {
-    width: "max-content",
-    minWidth: "0",
-    maxWidth: "none",
-    // Not inline-flex: a flex container drops a whitespace-only text run, so a
-    // space glyph or a whitespace-only string would measure 0px.
-    display: "inline-block",
-    boxSizing: "border-box",
-    whiteSpace: "pre",
-  });
-
-  for (const property of INLINE_TEXT_STYLE_PROPERTIES) {
-    target.style[property as never] = computed[property] as never;
-  }
+  copyInlineTextMeasurementStylesFromComputed(target, window.getComputedStyle(sourceElement));
 }
 
 export function createInlineTextMeasurementNode({
@@ -374,14 +338,69 @@ export function createInlineTextMeasurementNode({
   return measurementNode;
 }
 
+function acquireExactSingleLineProbe(
+  ownerDocument: Document,
+  computed: CSSStyleDeclaration,
+  text: string,
+): ExactSingleLineProbe {
+  let probe = exactSingleLineProbes.get(ownerDocument);
+  if (!probe || probe.busy) {
+    // A nested measurement must not overwrite the outer call's probe.
+    const root = createInlineMeasurementRoot(ownerDocument);
+    const node = ownerDocument.createElement("span");
+    node.textContent = text;
+    const style = node.style;
+    style.width = "max-content";
+    style.minWidth = "0";
+    style.maxWidth = "none";
+    style.display = "inline-block";
+    style.boxSizing = "border-box";
+    style.whiteSpace = "pre";
+    const styleValues: string[] = [];
+    for (let i = 0; i < INLINE_TEXT_STYLE_PROPERTIES.length; i += 1) {
+      const property = INLINE_TEXT_STYLE_PROPERTIES[i]!;
+      const value = computed[property] as string;
+      styleValues.push(value);
+      style[property as never] = value as never;
+    }
+    root.appendChild(node);
+    const fresh: ExactSingleLineProbe = { root, node, styleValues, busy: false };
+    if (!probe) exactSingleLineProbes.set(ownerDocument, fresh);
+    probe = fresh;
+  } else {
+    probe.node.textContent = text;
+    const style = probe.node.style;
+    const prev = probe.styleValues;
+    const nextFont = computed.font;
+    const fontChanged = prev[0] !== nextFont;
+    if (fontChanged) {
+      prev[0] = nextFont;
+      style.font = nextFont;
+    }
+    for (let i = 1; i < INLINE_TEXT_STYLE_PROPERTIES.length; i += 1) {
+      const property = INLINE_TEXT_STYLE_PROPERTIES[i]!;
+      const value = computed[property] as string;
+      if (prev[i] !== value || (fontChanged && i <= FONT_SHORTHAND_RESET_END)) {
+        prev[i] = value;
+        style[property as never] = value as never;
+      }
+    }
+  }
+  probe.busy = true;
+  return probe;
+}
+
 export function measureInlineTextWidthExact(input: InlineTextMeasureInput) {
-  const root = createInlineMeasurementRoot(input.sourceElement.ownerDocument);
-  const node = createInlineTextMeasurementNode(input);
-  root.appendChild(node);
-  input.sourceElement.ownerDocument.body.appendChild(root);
-  const width = node.offsetWidth;
-  root.remove();
-  return width;
+  const ownerDocument = input.sourceElement.ownerDocument;
+  const computed = window.getComputedStyle(input.sourceElement);
+  const probe = acquireExactSingleLineProbe(ownerDocument, computed, input.text);
+  try {
+    ownerDocument.body.appendChild(probe.root);
+    return probe.node.offsetWidth;
+  } finally {
+    probe.root.remove();
+    probe.busy = false;
+  }
 }
 
 export function measureInlineTextWidth(input: InlineTextMeasureInput) {

@@ -4,6 +4,26 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Changed
+
+- Eliminate redundant Canvas state reads, `getContext` lookups, and duplicate
+  `getComputedStyle` calls across fast, auto, and multiline text measurement.
+- Reuse one detached DOM probe per document for single-line `exact`
+  measurement, matching the multiline exact probe reuse pattern, with nested
+  call isolation and error cleanup.
+- Back tabular glyph calibration with a per-style ASCII `Float64Array` fast
+  path, single-pass scanning, single `getComputedStyle` cold calibration, and a
+  bounded 64-style cache.
+- Streamline `prepareWrapText` (single-pass soft-hyphen mapping without
+  intermediate `Set`/`Map`/`.sort()`) and skip `LineBreaker` on single-line
+  `measureInlineTextMultilineWidth` calls.
+- Optimize `computeMultilineMinContentWidth` with reverse-order greedy
+  scanning, a last-line end-only shortcut, typed-array row storage, and
+  breakpoint-tightened binary search bounds while preserving full-substring
+  shaping and non-monotonic soft-hyphen semantics.
+- Mark the package `"sideEffects": false` with `/* @__PURE__ */` annotations on
+  module-level caches to improve consumer tree-shaking.
+
 ## 0.3.3 - 2026-11-06
 
 ### Fixed

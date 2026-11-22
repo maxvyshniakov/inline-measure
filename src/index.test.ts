@@ -634,4 +634,144 @@ describe("inline-measure exports", () => {
     expect(measureInlineTextWidthAuto({ sourceElement: source, text: "123" })).toBe(21);
     source.remove();
   });
+
+  it("reads computed style only once per non-tabular auto measurement", () => {
+    stubCanvasMeasurement(8);
+    const source = document.createElement("span");
+    document.body.append(source);
+    const getComputedStyleSpy = vi.spyOn(window, "getComputedStyle");
+
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "Asset" })).toBe(40);
+    expect(getComputedStyleSpy).toHaveBeenCalledTimes(1);
+    source.remove();
+  });
+
+  it("reads computed style only once during cold tabular glyph calibration", () => {
+    stubCanvasMeasurement(5);
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 7;
+      },
+    });
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    document.body.append(source);
+    const getComputedStyleSpy = vi.spyOn(window, "getComputedStyle");
+
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "$12,345.67" })).toBe(70);
+    expect(getComputedStyleSpy).toHaveBeenCalledTimes(1);
+    source.remove();
+  });
+
+  it("calibrates mixed ASCII, non-ASCII, and surrogate-pair glyphs in tabular auto mode", () => {
+    stubCanvasMeasurement(5);
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return Array.from(this.textContent ?? "").length * 8;
+      },
+    });
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    source.style.letterSpacing = "1px";
+    document.body.append(source);
+
+    // 5 code points: "7", "×", "😀", " ", "9" -> 5 * 8 + 4 * 1 = 44
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "7×😀 9" })).toBe(44);
+    // Warm hit with reordered glyphs produces the exact same width
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "9 😀×7" })).toBe(44);
+    source.remove();
+  });
+
+  it("bounds detached exact probe allocations while refreshing text and styles", () => {
+    const source = document.createElement("span");
+    document.body.append(source);
+    const children = document.body.childElementCount;
+    const createElement = vi.spyOn(document, "createElement");
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "10");
+      },
+    });
+
+    for (let repeat = 0; repeat < 3; repeat += 1) {
+      source.style.fontSize = "12px";
+      expect(measureInlineTextWidthExact({ sourceElement: source, text: "Alpha" })).toBe(60);
+      source.style.fontSize = "16px";
+      expect(measureInlineTextWidthExact({ sourceElement: source, text: "Beta" })).toBe(64);
+      expect(document.body.childElementCount).toBe(children);
+    }
+
+    const probeAllocations = createElement.mock.calls.filter(([tag]) => tag === "span" || tag === "div");
+    expect(probeAllocations.length).toBeLessThanOrEqual(2);
+    source.remove();
+  });
+
+  it("keeps an outer exact measurement intact during a nested call and recovers from errors", () => {
+    const outerSource = document.createElement("span");
+    outerSource.style.fontSize = "10px";
+    const innerSource = document.createElement("span");
+    innerSource.style.fontSize = "20px";
+    document.body.append(outerSource, innerSource);
+    const children = document.body.childElementCount;
+
+    let nestedWidth: number | undefined;
+    let inNested = false;
+    const offsetSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        if (!inNested && nestedWidth === undefined) {
+          inNested = true;
+          nestedWidth = measureInlineTextWidthExact({ sourceElement: innerSource, text: "Hi" });
+          inNested = false;
+        }
+        return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "0");
+      });
+
+    expect(measureInlineTextWidthExact({ sourceElement: outerSource, text: "Hello" })).toBe(50);
+    expect(nestedWidth).toBe(40);
+    expect(document.body.childElementCount).toBe(children);
+
+    offsetSpy.mockImplementationOnce(() => { throw new Error("exact read failed"); });
+    expect(() => measureInlineTextWidthExact({ sourceElement: outerSource, text: "Fail" }))
+      .toThrow("exact read failed");
+    expect(document.body.childElementCount).toBe(children);
+
+    offsetSpy.mockImplementation(function (this: HTMLElement) {
+      return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "0");
+    });
+    const createElement = vi.spyOn(document, "createElement");
+    expect(measureInlineTextWidthExact({ sourceElement: outerSource, text: "After" })).toBe(50);
+    expect(createElement.mock.calls.filter(([tag]) => tag === "span" || tag === "div")).toHaveLength(0);
+
+    outerSource.remove();
+    innerSource.remove();
+  });
+
+  it("evicts oldest tabular style signatures when the cache exceeds its bound", () => {
+    stubCanvasMeasurement(5);
+    let reads = 0;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        reads += 1;
+        return (this.textContent?.length ?? 0) * 7;
+      },
+    });
+    const source = document.createElement("span");
+    source.style.fontVariantNumeric = "tabular-nums";
+    document.body.append(source);
+
+    for (let size = 10; size < 80; size += 1) {
+      source.style.fontSize = `${size}px`;
+      expect(measureInlineTextWidthAuto({ sourceElement: source, text: "1" })).toBe(7);
+    }
+    const readsBeforeFirstReuse = reads;
+    // The earliest signature (10px) was evicted after >64 distinct signatures.
+    source.style.fontSize = "10px";
+    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "1" })).toBe(7);
+    expect(reads).toBe(readsBeforeFirstReuse + 1);
+    source.remove();
+  });
 });

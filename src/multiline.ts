@@ -1,8 +1,13 @@
 import LineBreaker from "linebreak";
-import { applyTextTransform, getHorizontalBoxWidthFromComputed } from "./internal.js";
 import {
-  applyInlineMeasurementStyles,
-  createCanvasTextMeasurer,
+  applyTextTransform,
+  getHorizontalBoxWidthFromComputed,
+  measureCanvasTextFromComputed,
+  measureCanvasTextWithStyle,
+  resolveCanvasStyleFromComputed,
+  watchFontLoads,
+} from "./internal.js";
+import {
   createInlineMeasurementRoot,
   type InlineMeasureAccuracy,
 } from "./index.js";
@@ -26,45 +31,78 @@ export interface InlineTextMultilineMeasureInput {
   lines: number;
 }
 
+const COLLAPSIBLE_WS_RE = /[\t\n\v\f\r \u2028\u2029]+/g;
+const NEEDS_COLLAPSE_RE = /^ |[\t\n\v\f\r\u2028\u2029]|  /;
+
+function collapseWhitespace(text: string) {
+  if (!NEEDS_COLLAPSE_RE.test(text)) return text;
+  const collapsed = text.replace(COLLAPSIBLE_WS_RE, " ");
+  return collapsed.charCodeAt(0) === 32 ? collapsed.slice(1) : collapsed;
+}
+
 export function prepareWrapText(text: string): {
   collapsed: string;
   normalized: string;
   opportunities: WrapOpportunity[];
 } {
-  const withSoftHyphens = text.replace(/[\t\n\v\f\r \u2028\u2029]+/g, " ").replace(/^ +/, "");
-  const softHyphenOffsets = new Set<number>();
-  let normalized = "";
+  const withSoftHyphens = collapseWhitespace(text);
+  const firstShy = withSoftHyphens.indexOf("\u00ad");
+  const opportunities: WrapOpportunity[] = [];
 
-  for (let index = 0; index < withSoftHyphens.length; index += 1) {
-    if (withSoftHyphens[index] === "\u00ad") {
-      softHyphenOffsets.add(index);
-    } else {
-      normalized += withSoftHyphens[index];
+  if (firstShy === -1) {
+    const lineBreaker = new LineBreaker(withSoftHyphens);
+    let prevPos = -1;
+    for (let lineBreak = lineBreaker.nextBreak(); lineBreak; lineBreak = lineBreaker.nextBreak()) {
+      const position = lineBreak.position;
+      if (position !== prevPos) {
+        opportunities.push({ position, softHyphen: false });
+        prevPos = position;
+      }
     }
+    return {
+      collapsed: withSoftHyphens,
+      normalized: withSoftHyphens,
+      opportunities,
+    };
   }
 
-  const opportunitiesByPosition = new Map<number, WrapOpportunity>();
+  const softHyphenOffsets: number[] = [];
+  let normalized = "";
+  let chunkStart = 0;
+  for (let index = firstShy; index !== -1; index = withSoftHyphens.indexOf("\u00ad", index + 1)) {
+    softHyphenOffsets.push(index);
+    normalized += withSoftHyphens.slice(chunkStart, index);
+    chunkStart = index + 1;
+  }
+  normalized += withSoftHyphens.slice(chunkStart);
+
   const lineBreaker = new LineBreaker(withSoftHyphens);
+  let shyIndex = 0;
+  const shyCount = softHyphenOffsets.length;
   for (let lineBreak = lineBreaker.nextBreak(); lineBreak; lineBreak = lineBreaker.nextBreak()) {
-    let removedSoftHyphens = 0;
-    for (const offset of softHyphenOffsets) {
-      if (offset < lineBreak.position) removedSoftHyphens += 1;
+    const breakPos = lineBreak.position;
+    while (shyIndex < shyCount && softHyphenOffsets[shyIndex]! < breakPos) {
+      shyIndex += 1;
     }
-    const position = lineBreak.position - removedSoftHyphens;
-    const softHyphen = softHyphenOffsets.has(lineBreak.position - 1);
-    const existing = opportunitiesByPosition.get(position);
-    opportunitiesByPosition.set(position, {
-      position,
-      softHyphen: existing?.softHyphen || softHyphen,
-    });
+    const position = breakPos - shyIndex;
+    const softHyphen = shyIndex > 0 && softHyphenOffsets[shyIndex - 1] === breakPos - 1;
+    const last = opportunities[opportunities.length - 1];
+    if (last !== undefined && last.position === position) {
+      if (softHyphen) last.softHyphen = true;
+    } else {
+      opportunities.push({ position, softHyphen });
+    }
   }
 
   return {
     collapsed: withSoftHyphens,
     normalized,
-    opportunities: [...opportunitiesByPosition.values()].sort((left, right) => left.position - right.position),
+    opportunities,
   };
 }
+
+// Indices 1..WRAP_FONT_SHORTHAND_RESET_END are reset by assigning `style.font`.
+const WRAP_FONT_SHORTHAND_RESET_END = 13;
 
 const WRAP_TEXT_STYLE_PROPERTIES = [
   "font",
@@ -80,39 +118,38 @@ const WRAP_TEXT_STYLE_PROPERTIES = [
   "fontVariantNumeric",
   "fontVariationSettings",
   "fontWeight",
-  "letterSpacing",
   "lineHeight",
+  "letterSpacing",
   "wordSpacing",
 ] as const satisfies ReadonlyArray<keyof CSSStyleDeclaration>;
 
 function createMultilineWrapProbe(
   ownerDocument: Document,
-  computed: CSSStyleDeclaration,
+  styleValues: readonly string[],
   text: string,
   width: string,
 ) {
   const probe = ownerDocument.createElement("span");
   probe.textContent = text;
-  applyInlineMeasurementStyles(probe, {
-    borderLeftWidth: "0",
-    borderRightWidth: "0",
-    boxSizing: "border-box",
-    display: "block",
-    hyphens: "manual",
-    overflowWrap: "normal",
-    paddingLeft: "0",
-    paddingRight: "0",
-    textTransform: "none",
-    whiteSpace: "normal",
-    width,
-    wordBreak: "normal",
-  });
-  probe.style.setProperty("text-wrap", "wrap");
+  const style = probe.style;
+  style.borderLeftWidth = "0";
+  style.borderRightWidth = "0";
+  style.boxSizing = "border-box";
+  style.display = "block";
+  style.hyphens = "manual";
+  style.overflowWrap = "normal";
+  style.paddingLeft = "0";
+  style.paddingRight = "0";
+  style.textTransform = "none";
+  style.whiteSpace = "normal";
+  style.width = width;
+  style.wordBreak = "normal";
+  style.setProperty("text-wrap", "wrap");
 
-  for (const property of WRAP_TEXT_STYLE_PROPERTIES) {
-    probe.style[property as never] = computed[property] as never;
+  for (let i = 0; i < WRAP_TEXT_STYLE_PROPERTIES.length; i += 1) {
+    style[WRAP_TEXT_STYLE_PROPERTIES[i] as never] = styleValues[i] as never;
   }
-  probe.style.textTransform = "none";
+  style.textTransform = "none";
   return probe;
 }
 
@@ -120,13 +157,13 @@ interface MultilineWrapProbes {
   root: HTMLElement;
   baseline: HTMLElement;
   candidate: HTMLElement;
-  styleKey: string;
+  styleValues: string[];
   busy: boolean;
 }
 
 // Retain only one detached pair per document, never measured widths or heights.
 // Reattaching it still lets the browser resolve loaded fonts and native breaks.
-const multilineWrapProbes = new WeakMap<Document, MultilineWrapProbes>();
+const multilineWrapProbes = /* @__PURE__ */ new WeakMap<Document, MultilineWrapProbes>();
 
 function acquireMultilineWrapProbes(
   ownerDocument: Document,
@@ -134,30 +171,46 @@ function acquireMultilineWrapProbes(
   text: string,
   width: number,
 ) {
-  const styleValues = WRAP_TEXT_STYLE_PROPERTIES.map(property => computed[property]);
-  const styleKey = styleValues.join("\0");
   let probes = multilineWrapProbes.get(ownerDocument);
   if (!probes || probes.busy) {
     // A nested measurement must not overwrite the outer call's probes.
+    const styleValues: string[] = [];
+    for (let i = 0; i < WRAP_TEXT_STYLE_PROPERTIES.length; i += 1) {
+      styleValues.push(computed[WRAP_TEXT_STYLE_PROPERTIES[i]!] as string);
+    }
     const root = createInlineMeasurementRoot(ownerDocument);
-    const baseline = createMultilineWrapProbe(ownerDocument, computed, text, "1000000px");
-    const candidate = createMultilineWrapProbe(ownerDocument, computed, text, `${width}px`);
+    const baseline = createMultilineWrapProbe(ownerDocument, styleValues, text, "1000000px");
+    const candidate = createMultilineWrapProbe(ownerDocument, styleValues, text, `${width}px`);
     root.append(baseline, candidate);
-    const fresh = { root, baseline, candidate, styleKey, busy: false };
+    const fresh: MultilineWrapProbes = { root, baseline, candidate, styleValues, busy: false };
     if (!probes) multilineWrapProbes.set(ownerDocument, fresh);
     probes = fresh;
   } else {
     probes.baseline.textContent = text;
     probes.candidate.textContent = text;
     probes.candidate.style.width = `${width}px`;
-    if (probes.styleKey !== styleKey) {
-      for (const probe of [probes.baseline, probes.candidate]) {
-        for (let index = 0; index < WRAP_TEXT_STYLE_PROPERTIES.length; index += 1) {
-          probe.style[WRAP_TEXT_STYLE_PROPERTIES[index] as never] = styleValues[index] as never;
-        }
-        probe.style.textTransform = "none";
+    const baselineStyle = probes.baseline.style;
+    const candidateStyle = probes.candidate.style;
+    const prev = probes.styleValues;
+    const nextFont = computed.font;
+    const fontChanged = prev[0] !== nextFont;
+    if (fontChanged) {
+      prev[0] = nextFont;
+      baselineStyle.font = nextFont;
+      candidateStyle.font = nextFont;
+    }
+    for (let index = 1; index < WRAP_TEXT_STYLE_PROPERTIES.length; index += 1) {
+      const property = WRAP_TEXT_STYLE_PROPERTIES[index]!;
+      const value = computed[property] as string;
+      if (prev[index] !== value || (fontChanged && index <= WRAP_FONT_SHORTHAND_RESET_END)) {
+        prev[index] = value;
+        baselineStyle[property as never] = value as never;
+        candidateStyle[property as never] = value as never;
       }
-      probes.styleKey = styleKey;
+    }
+    if (fontChanged) {
+      baselineStyle.textTransform = "none";
+      candidateStyle.textTransform = "none";
     }
   }
   probes.busy = true;
@@ -180,14 +233,19 @@ function verifyExactMultilineContentWidth({
   const ownerDocument = sourceElement.ownerDocument;
   const probes = acquireMultilineWrapProbes(ownerDocument, computed, collapsed, canvasContentWidth);
   const { root, baseline, candidate } = probes;
+  let lastAppliedWidth: number | string = canvasContentWidth;
 
   try {
     ownerDocument.body.appendChild(root);
     const singleLineHeight = baseline.getBoundingClientRect().height;
+    const maxHeight = singleLineHeight * lines + 0.5;
     const fits = (width: number) => {
-      candidate.style.width = `${width}px`;
+      if (lastAppliedWidth !== width) {
+        candidate.style.width = `${width}px`;
+        lastAppliedWidth = width;
+      }
       const height = candidate.getBoundingClientRect().height;
-      return height <= singleLineHeight * lines + 0.5
+      return height <= maxHeight
         && candidate.scrollWidth <= Math.ceil(width);
     };
 
@@ -206,6 +264,7 @@ function verifyExactMultilineContentWidth({
       // Measure an upper bound with the same native wrap styles, including
       // word spacing and OpenType features, rather than another Canvas guess.
       candidate.style.width = "max-content";
+      lastAppliedWidth = "max-content";
       hi = Math.max(Math.ceil(candidate.getBoundingClientRect().width), hi + 1);
     }
 
@@ -230,8 +289,19 @@ export function computeMultilineMinContentWidth({
   normalized,
   opportunities,
 }: ComputeMultilineMinContentWidthInput) {
-  if (!normalized) return 0;
+  const normalizedLength = normalized.length;
+  if (normalizedLength === 0) return 0;
   if (lines <= 1) return Math.ceil(measureContent(trimTrailingCollapsibleSpaces(normalized)));
+
+  const opportunityCount = opportunities.length;
+  if (
+    opportunityCount === 0
+    || (opportunityCount === 1
+      && opportunities[0]!.position >= normalizedLength
+      && !opportunities[0]!.softHyphen)
+  ) {
+    return Math.ceil(measureContent(trimTrailingCollapsibleSpaces(normalized)));
+  }
 
   const measurementCache = new Map<string, number>();
   const measureCached = (value: string) => {
@@ -242,60 +312,118 @@ export function computeMultilineMinContentWidth({
     measurementCache.set(value, measured);
     return measured;
   };
-  const contentEnds = opportunities.map((opportunity) =>
-    trimTrailingCollapsibleSpacePosition(normalized, opportunity.position));
-  const rows = new Map<number, { contentStart: number; widths: (number | undefined)[] }>();
-  const getRow = (start: number) => {
-    let row = rows.get(start);
-    if (!row) {
-      let contentStart = start;
-      while (normalized[contentStart] === " ") contentStart += 1;
-      row = { contentStart, widths: [] };
-      rows.set(start, row);
-    }
-    return row;
-  };
-  const isFeasible = (width: number) => {
-    let start = 0;
-    let usedLines = 0;
 
-    while (start < normalized.length) {
+  const fullTrimmed = trimTrailingCollapsibleSpaces(normalized);
+  const fullWidth = measureCached(fullTrimmed);
+  let hi = Math.ceil(fullWidth);
+  if (hi <= 0) return hi;
+
+  const contentEnds = new Int32Array(opportunityCount);
+  for (let i = 0; i < opportunityCount; i += 1) {
+    contentEnds[i] = trimTrailingCollapsibleSpacePosition(normalized, opportunities[i]!.position);
+  }
+
+  // Row 0 is startPos = 0 (startIndex = -1); row k + 1 is opportunities[k].position.
+  const rowStarts = new Int32Array(opportunityCount + 1);
+  rowStarts.fill(-1);
+  const rowWidths: (Float64Array | undefined)[] = [];
+
+  const getRowWidths = (rowIndex: number, startPos: number) => {
+    let widths = rowWidths[rowIndex];
+    if (widths === undefined) {
+      let contentStart = startPos;
+      while (contentStart < normalizedLength && normalized.charCodeAt(contentStart) === 32) {
+        contentStart += 1;
+      }
+      rowStarts[rowIndex] = contentStart;
+      widths = new Float64Array(opportunityCount);
+      widths.fill(Number.NaN);
+      rowWidths[rowIndex] = widths;
+    }
+    return widths;
+  };
+
+  if (normalized.charCodeAt(0) !== 32) {
+    const lastOpp = opportunities[opportunityCount - 1]!;
+    if (lastOpp.position === normalizedLength && !lastOpp.softHyphen) {
+      const widths0 = getRowWidths(0, 0);
+      widths0[opportunityCount - 1] = fullWidth;
+    }
+  }
+
+  let usedMaxWidth = Number.NEGATIVE_INFINITY;
+  let minRejectedWidth = Number.POSITIVE_INFINITY;
+
+  const isFeasible = (width: number) => {
+    let startIndex = -1;
+    let startPos = 0;
+    let usedLines = 0;
+    usedMaxWidth = Number.NEGATIVE_INFINITY;
+    minRejectedWidth = Number.POSITIVE_INFINITY;
+
+    while (startPos < normalizedLength) {
       usedLines += 1;
       if (usedLines > lines) return false;
 
-      let farthestFittingOpportunity: WrapOpportunity | undefined;
-      const row = getRow(start);
-      for (let index = 0; index < opportunities.length; index += 1) {
+      const rowIndex = startIndex + 1;
+      const widths = getRowWidths(rowIndex, startPos);
+      const contentStart = rowStarts[rowIndex]!;
+      const isLastLine = usedLines === lines;
+
+      let fittedIndex = -1;
+      // Scan from the farthest opportunity backward: the first fitting candidate
+      // is guaranteed to be the farthest greedy break, even with non-monotonic
+      // soft-hyphen widths. On the final line, only end-reaching opportunities
+      // can succeed, skipping all intermediate break measurements.
+      for (let index = opportunityCount - 1; index > startIndex; index -= 1) {
         const opportunity = opportunities[index]!;
-        if (opportunity.position <= start) continue;
-        let candidateWidth = row.widths[index];
-        if (candidateWidth === undefined) {
+        if (opportunity.position <= startPos) break;
+        if (isLastLine && opportunity.position < normalizedLength) return false;
+
+        let candidateWidth = widths[index]!;
+        if (candidateWidth !== candidateWidth) {
           // Keep full-substring shaping, including kerning and signed spacing.
           // Later feasibility passes use numbers without constructing strings.
-          const candidate = normalized.slice(row.contentStart, contentEnds[index])
-            + (opportunity.softHyphen ? "-" : "");
+          const slice = normalized.slice(contentStart, contentEnds[index]!);
+          const candidate = opportunity.softHyphen ? `${slice}-` : slice;
           candidateWidth = measureCached(candidate);
-          row.widths[index] = candidateWidth;
+          widths[index] = candidateWidth;
         }
+
         if (candidateWidth <= width) {
-          farthestFittingOpportunity = opportunity;
+          if (candidateWidth > usedMaxWidth) usedMaxWidth = candidateWidth;
+          if (opportunity.position >= normalizedLength) return true;
+          fittedIndex = index;
+          startPos = opportunity.position;
+          break;
         }
+        if (candidateWidth < minRejectedWidth) minRejectedWidth = candidateWidth;
       }
 
-      if (!farthestFittingOpportunity) return false;
-      if (farthestFittingOpportunity.position >= normalized.length) return true;
-      start = farthestFittingOpportunity.position;
+      if (fittedIndex === -1) return false;
+      startIndex = fittedIndex;
     }
 
     return true;
   };
 
   let lo = -1;
-  let hi = Math.ceil(measureCached(trimTrailingCollapsibleSpaces(normalized)));
+  let firstProbe = lines > 2;
   while (hi - lo > 1) {
-    const middle = Math.floor((lo + hi) / 2);
+    let middle: number;
+    if (firstProbe) {
+      firstProbe = false;
+      const estimate = Math.ceil(hi / lines);
+      middle = estimate > lo && estimate < hi ? estimate : Math.floor((lo + hi) / 2);
+    } else {
+      middle = Math.floor((lo + hi) / 2);
+    }
     if (isFeasible(middle)) {
-      hi = middle;
+      const tightenedHi = Number.isFinite(usedMaxWidth) ? Math.max(lo + 1, Math.ceil(usedMaxWidth)) : middle;
+      hi = tightenedHi < middle ? tightenedHi : middle;
+    } else if (Number.isFinite(minRejectedWidth)) {
+      const nextLo = Math.ceil(minRejectedWidth) - 1;
+      lo = nextLo > middle ? Math.min(nextLo, hi - 1) : middle;
     } else {
       lo = middle;
     }
@@ -305,12 +433,13 @@ export function computeMultilineMinContentWidth({
 }
 
 function trimTrailingCollapsibleSpaces(value: string) {
-  return value.slice(0, trimTrailingCollapsibleSpacePosition(value, value.length));
+  const trimmedPosition = trimTrailingCollapsibleSpacePosition(value, value.length);
+  return trimmedPosition === value.length ? value : value.slice(0, trimmedPosition);
 }
 
 function trimTrailingCollapsibleSpacePosition(value: string, position: number) {
   let trimmedPosition = position;
-  while (value[trimmedPosition - 1] === " ") trimmedPosition -= 1;
+  while (trimmedPosition > 0 && value.charCodeAt(trimmedPosition - 1) === 32) trimmedPosition -= 1;
   return trimmedPosition;
 }
 
@@ -321,13 +450,24 @@ export function measureInlineTextMultilineWidth({
   lines,
 }: InlineTextMultilineMeasureInput) {
   const computed = window.getComputedStyle(sourceElement);
-  const prepared = prepareWrapText(applyTextTransform(text, computed.textTransform));
+  const transformed = applyTextTransform(text, computed.textTransform);
+  if (lines <= 1) {
+    const collapsed = collapseWhitespace(transformed);
+    const normalized = collapsed.includes("\u00ad") ? collapsed.replaceAll("\u00ad", "") : collapsed;
+    const trimmed = trimTrailingCollapsibleSpaces(normalized);
+    const contentWidth = trimmed ? Math.ceil(measureCanvasTextFromComputed(computed, trimmed)) : 0;
+    return contentWidth + getHorizontalBoxWidthFromComputed(computed);
+  }
+
+  const prepared = prepareWrapText(transformed);
+  if (typeof document !== "undefined") watchFontLoads(document.fonts);
+  const canvasStyle = resolveCanvasStyleFromComputed(computed);
   const contentWidth = computeMultilineMinContentWidth({
     ...prepared,
     lines,
-    measureContent: createCanvasTextMeasurer(computed),
+    measureContent: (value) => measureCanvasTextWithStyle(canvasStyle, value),
   });
-  if (!prepared.normalized || accuracy !== "exact" || lines <= 1) {
+  if (!prepared.normalized || accuracy !== "exact") {
     return contentWidth + getHorizontalBoxWidthFromComputed(computed);
   }
 

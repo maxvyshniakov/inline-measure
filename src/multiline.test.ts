@@ -620,4 +620,96 @@ describe("measureInlineTextMultilineWidth", () => {
     expect(readRect).not.toHaveBeenCalled();
     source.remove();
   });
+
+  it("handles multiple and consecutive soft hyphens in prepareWrapText", () => {
+    expect(prepareWrapText("a\u00adb\u00adc")).toEqual({
+      collapsed: "a\u00adb\u00adc",
+      normalized: "abc",
+      opportunities: [
+        { position: 1, softHyphen: true },
+        { position: 2, softHyphen: true },
+        { position: 3, softHyphen: false },
+      ],
+    });
+    expect(prepareWrapText("aa\u00ad\u00adbb")).toEqual({
+      collapsed: "aa\u00ad\u00adbb",
+      normalized: "aabb",
+      opportunities: [
+        { position: 2, softHyphen: true },
+        { position: 4, softHyphen: false },
+      ],
+    });
+  });
+
+  it("matches brute-force greedy wrapping across multi-line and soft-hyphen cases", () => {
+    const cases = [
+      "aa bb cc dd ee ff",
+      "Quarterly revenue report for assigned team member 12",
+      "co\u00adoperation settings and available storage",
+      "super\u00adcali\u00adfragilistic expiali\u00addocious",
+      "singleunbreakableword",
+      "a b c d e f g h",
+      "trailing space   ",
+    ];
+    const measureContent = (value: string) => {
+      let width = 0;
+      for (let i = 0; i < value.length; i += 1) {
+        const code = value.charCodeAt(i);
+        width += code === 32 ? 3.5 : code === 45 ? 4.2 : (code % 5) + 5.1;
+      }
+      return width;
+    };
+
+    const bruteForce = (normalized: string, opportunities: readonly { position: number; softHyphen: boolean }[], lines: number) => {
+      const fullWidth = Math.ceil(measureContent(normalized.replace(/ +$/, "")));
+      for (let w = 0; w <= fullWidth; w += 1) {
+        let start = 0;
+        let used = 0;
+        let feasible = true;
+        while (start < normalized.length) {
+          used += 1;
+          if (used > lines) { feasible = false; break; }
+          let contentStart = start;
+          while (normalized[contentStart] === " ") contentStart += 1;
+          let best: { position: number; softHyphen: boolean } | undefined;
+          for (const opp of opportunities) {
+            if (opp.position <= start) continue;
+            let end = opp.position;
+            while (end > 0 && normalized[end - 1] === " ") end -= 1;
+            const candidate = normalized.slice(contentStart, end) + (opp.softHyphen ? "-" : "");
+            if (measureContent(candidate) <= w) best = opp;
+          }
+          if (!best) { feasible = false; break; }
+          if (best.position >= normalized.length) break;
+          start = best.position;
+        }
+        if (feasible) return w;
+      }
+      return fullWidth;
+    };
+
+    for (const text of cases) {
+      const prepared = prepareWrapText(text);
+      for (const lines of [1, 2, 3, 4]) {
+        expect(computeMultilineMinContentWidth({ ...prepared, lines, measureContent }))
+          .toBe(bruteForce(prepared.normalized, prepared.opportunities, lines));
+      }
+    }
+  });
+
+  it("skips intermediate last-line break measurements in computeMultilineMinContentWidth", () => {
+    const prepared = prepareWrapText("alpha beta gamma delta epsilon zeta");
+    const measured: string[] = [];
+    const width = computeMultilineMinContentWidth({
+      ...prepared,
+      lines: 2,
+      measureContent: (value) => {
+        measured.push(value);
+        return value.length * 8;
+      },
+    });
+    expect(width).toBe(144);
+    // Reverse scan + last-line shortcut measures far fewer than all O(n^2) substrings.
+    expect(measured.length).toBeLessThanOrEqual(8);
+  });
 });
