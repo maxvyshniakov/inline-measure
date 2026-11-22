@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.4.0 - 2026-11-22
+
 ### Changed
 
 - Eliminate redundant Canvas state reads, `getContext` lookups, and duplicate
