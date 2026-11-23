@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.5.0 - 2026-11-23
+
 ### Breaking
 
 - The package is now `inline-measure` on npmjs.org, published with provenance,
