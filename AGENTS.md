@@ -3,10 +3,10 @@
 Browser text measurement. It must not depend on React, Sid-Kit or Data Grid.
 Application labels, routes and fetching stay outside the package.
 
-The repository and the package are private; the package is published to the private
-GitHub Packages registry as part of a release (docs/VERSIONING.md). Making either
-public, publishing to npm or enabling Pages needs explicit authorization.
-Installing needs `GITHUB_TOKEN` with `read:packages` (`export GITHUB_TOKEN=$(gh auth token)`).
+The package is `inline-measure` on npmjs.org, published with provenance from
+`.github/workflows/release-npm.yml` as part of a release (docs/VERSIONING.md). Changing the
+repository's visibility, a publication or enabling Pages needs explicit authorization.
+Installing needs no token.
 
 Behavior changes need focused tests. Public contracts need matching README and
 changelog entries under `## Unreleased`; cut them into a version with
@@ -15,5 +15,5 @@ All default examples and documentation use English.
 
 - Pushing, CI, releases and publishing: [docs/agents/publishing.md](docs/agents/publishing.md).
 - Checks, the `bun run verify` gate and pins: [docs/agents/checks.md](docs/agents/checks.md).
-- The gate, the pre-push hook, release and publish come from `@maxvyshniakov/repo-kit`; this repository declares its
-  verify steps in `repo-kit.config.mjs`.
+- The gate, the pre-push hook, release and publish come from `@maxvyshniakov/package-kit`; this repository declares
+  its verify steps in `package-kit.config.mjs`.

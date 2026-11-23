@@ -1,5 +1,5 @@
 {
-  "name": "@maxvyshniakov/inline-measure",
+  "name": "inline-measure",
   "version": "0.4.0",
   "type": "module",
   "sideEffects": false,
@@ -24,32 +24,31 @@
     }
   },
   "scripts": {
-    "prepare": "repo-kit hooks install",
+    "prepare": "package-kit hooks install",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "bun run build",
-    "verify": "repo-kit verify",
-    "release": "repo-kit release",
-    "release:publish": "repo-kit publish",
-    "check:changelogs": "repo-kit check-changelogs",
-    "check:kit": "repo-kit check",
-    "check:consumer": "repo-kit packed-consumer",
-    "security:tls": "repo-kit tls",
-    "lint": "oxlint --config .oxlintrc.json --max-warnings=0 src scripts repo-kit.config.mjs",
+    "verify": "package-kit verify",
+    "release": "package-kit release",
+    "release:publish": "package-kit publish",
+    "check:changelogs": "package-kit check-changelogs",
+    "check:kit": "package-kit check",
+    "check:consumer": "package-kit packed-consumer",
+    "lint": "oxlint --config .oxlintrc.json --max-warnings=0 src scripts package-kit.config.mjs",
     "test": "vitest --config vitest.config.ts run",
     "typecheck": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
     "typecheck:fast": "tsc --noEmit -p tsconfig.build.json",
-    "perf": "repo-kit heavy all node scripts/perf/run.mjs",
-    "verify:browser": "repo-kit heavy 1 node scripts/perf/run.mjs --correctness",
-    "test:perf": "repo-kit heavy 1 vitest --config vitest.config.ts run scripts/perf/report.test.ts",
+    "perf": "package-kit heavy all node scripts/perf/run.mjs",
+    "verify:browser": "package-kit heavy 1 node scripts/perf/run.mjs --correctness",
+    "test:perf": "package-kit heavy 1 vitest --config vitest.config.ts run scripts/perf/report.test.ts",
     "perf:capture": "bun run perf",
     "perf:report": "node scripts/perf/print-report.mjs",
     "perf:test": "bun run test:perf",
-    "verify:fonts": "repo-kit heavy 1 node scripts/perf/font-check.mjs",
-    "verify:boxes": "repo-kit heavy 1 node scripts/perf/inline-box-check.mjs"
+    "verify:fonts": "package-kit heavy 1 node scripts/perf/font-check.mjs",
+    "verify:boxes": "package-kit heavy 1 node scripts/perf/inline-box-check.mjs"
   },
   "devDependencies": {
     "@fontsource/inter": "^5.3.0",
-    "@maxvyshniakov/repo-kit": "0.3.0",
+    "@maxvyshniakov/package-kit": "1.0.0",
     "@types/node": "26.6.3",
     "happy-dom": "20.14.5",
     "oxlint": "1.86.0",
@@ -65,8 +64,5 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maxvyshniakov/inline-measure.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
   }
 }

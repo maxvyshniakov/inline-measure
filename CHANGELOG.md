@@ -1,8 +1,19 @@
-# @maxvyshniakov/inline-measure Changelog
+# inline-measure Changelog
 
 Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
+
+### Breaking
+
+- The package is now `inline-measure` on npmjs.org, published with provenance,
+  instead of `@maxvyshniakov/inline-measure` on GitHub Packages. Replace the
+  dependency with `inline-measure` and change imports of
+  `@maxvyshniakov/inline-measure`, `/multiline` and `/testing` to
+  `inline-measure`, `inline-measure/multiline` and `inline-measure/testing`.
+  Installing it no longer needs a `bunfig.toml` scope or a `GITHUB_TOKEN` with
+  `read:packages`. The API is unchanged.
+  No transition period: the package name is what consumers install and import, and npmjs.org gets a new package rather than a new version of the old one, so each consumer switches once when it moves its dependency. `@maxvyshniakov/inline-measure` 0.4.0 and older stay on GitHub Packages, so pinned consumers keep working until they move.
 
 ## 0.4.0 - 2026-11-22
 

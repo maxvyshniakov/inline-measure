@@ -1,0 +1,46 @@
+# Publishes the released version to npmjs.org as `inline-measure` with npm
+# trusted publishing (OIDC) and provenance, from package-kit's template
+# (docs/templates/release-npm.yml). package-kit.config.mjs sets
+# `publish: { registry: "npm", access: "public" }`; `package-kit publish`
+# refuses outside Actions and names this file.
+#
+# - Register this file once on npmjs.org as the package's trusted publisher:
+#   npm trust github inline-measure --file release-npm.yml --repo maxvyshniakov/inline-measure
+#   The OIDC claims name this caller's workflow file, so the job stays here.
+# - Inside Actions, `package-kit publish` skips the release gate's own wait: the
+#   check job below gates the publication.
+# - Only the publishing job, after check and on main, gets id-token: write and
+#   contents: write (the tag). It runs on GitHub-hosted ubuntu-latest, only by
+#   workflow_dispatch, so a fork's pull request never reaches it.
+name: Release to npm
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: release-npm
+  cancel-in-progress: false
+jobs:
+  check:
+    uses: maxvyshniakov/package-kit/.github/workflows/verify.yml@v1.0.0
+    permissions:
+      contents: read
+      packages: read
+    with:
+      timeout-minutes: 15
+  publish:
+    needs: check
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: maxvyshniakov/package-kit/actions/setup-bun@v1.0.0
+      - uses: maxvyshniakov/package-kit/actions/npm-publish@v1.0.0

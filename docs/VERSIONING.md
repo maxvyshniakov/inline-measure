@@ -1,7 +1,8 @@
 # Versions, changelog and publishing
 
-The package owns its version and its `CHANGELOG.md`, and is published to the
-private GitHub Packages registry as `@maxvyshniakov/<name>`.
+The package owns its version and its `CHANGELOG.md`, and is published to
+npmjs.org as `inline-measure` (it was `@maxvyshniakov/inline-measure` on GitHub
+Packages up to 0.4.0).
 
 ## Rules
 
@@ -37,29 +38,24 @@ private GitHub Packages registry as `@maxvyshniakov/<name>`.
 After the release commit is on `origin/main`:
 
 ```sh
-git fetch origin && bunx repo-kit release-gate origin/main
-bun run release:publish
+gh workflow run release-npm.yml --ref main
 ```
 
-`repo-kit release-gate` is the local release gate (repo-kit's README, "Release gate"): it runs
-`bun run verify -- --release` in a clean temporary worktree of the commit and, on a pass, records the commit
-status `Library checks (local, macOS)`.
+`.github/workflows/release-npm.yml` (package-kit's `docs/templates/release-npm.yml`) has two jobs:
 
-`release:publish` is `repo-kit publish` (`@maxvyshniakov/repo-kit`). In order, it:
+1. `check` runs `bun run verify -- --release` on GitHub-hosted `ubuntu-latest`;
+2. `publish`, only after `check` passes and only on `main`, is the one job granted `id-token: write` (npm trusted
+   publishing and provenance) and `contents: write` (the tag). It runs `bun run release:publish`, which is
+   `package-kit publish` (`@maxvyshniakov/package-kit`). In order, it:
+   1. checks that HEAD is `origin/main` by SHA, the tree is clean, `## Unreleased` is empty and the tag is new;
+   2. packs one archive, runs the packed-consumer check on it and uploads those bytes with
+      `npm publish --access public --provenance`;
+   3. waits until npmjs.org serves the version with its integrity and provenance attestation;
+   4. pushes a `v<version>` tag.
 
-1. runs the Bun TLS gate;
-2. checks that HEAD is `origin/main` by SHA (a worktree or a detached HEAD is fine), the tree is clean,
-   `## Unreleased` is empty and the tag is new;
-3. requires the release gate's passed status on that commit, and refuses without one, naming the command to run;
-4. runs `bun publish` (which builds first) and checks that the registry serves the version;
-5. pushes a `v<version>` tag.
-
-It uses `GITHUB_TOKEN`, or `gh auth token` when that is unset; the token needs `write:packages`
-(`gh auth refresh -h github.com -s read:packages,write:packages`).
-If the tag push fails after publication, it prints the recovery; `bun run release:publish -- --resume` finishes it.
-
-Library checks in CI are advisory. One line in `repo-kit.config.mjs`, `release: { gate: "ci" }`, switches back:
-step 3 then waits for Library checks on the commit and refuses when they fail.
+`package-kit publish` refuses npmjs.org outside GitHub Actions. npmjs.org must trust the workflow file once, the
+owner's step: `npm trust github inline-measure --file release-npm.yml --repo maxvyshniakov/inline-measure`.
+If the tag push fails after publication, rerun the workflow; `bun run release:publish -- --resume` finishes it.
 
 After publication and tag creation, the same command requests Data Grid's
 **Update catalog dependencies** workflow. Its catalog and package dependencies
@@ -71,14 +67,14 @@ The publishing token needs access to Data Grid with Actions write permission
 for the immediate notification. No additional cross-repository secret is stored.
 If notification fails (including a repository-scoped Actions token), publication
 still succeeds and Data Grid's daily registry check discovers the release.
-Retry only the notification with `bun run repo-kit notify`; do not
+Retry only the notification with `bunx package-kit notify`; do not
 republish an existing version. Failed Data Grid checks leave its main and live
 catalog unchanged and appear in its workflow log.
 
 ## Format
 
 ```md
-# @maxvyshniakov/<package> Changelog
+# inline-measure Changelog
 
 Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 

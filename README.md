@@ -1,9 +1,9 @@
-# @maxvyshniakov/inline-measure
+# inline-measure
 
 Browser text measurement without React or design-system dependencies.
 
 ```ts
-import { measureInlineTextWidth } from "@maxvyshniakov/inline-measure";
+import { measureInlineTextWidth } from "inline-measure";
 
 await document.fonts.ready;
 const width = measureInlineTextWidth({ sourceElement: element, text: "Hello" });
@@ -22,7 +22,7 @@ The DOM-based methods need a browser. `measureInlineElementWidth` reads an
 element's rendered width, and `createCanvasTextMeasurer` returns a reusable
 `(text) => width` function for a font or computed style.
 
-The `@maxvyshniakov/inline-measure/multiline` entrypoint measures wrapped text:
+The `inline-measure/multiline` entrypoint measures wrapped text:
 `measureInlineTextMultilineWidth` returns the narrowest width at which `text`
 fits in `lines` lines, using the same `accuracy` options.
 `fast` and `auto` use Canvas estimates and Unicode break opportunities;
@@ -81,28 +81,19 @@ sizing and both spacings), and invalidate font-dependent values after font
 loading cycles. The library refreshes its own caches; it does not invalidate a
 consumer's saved widths or schedule another fit.
 
-The `@maxvyshniakov/inline-measure/testing` entrypoint is for tests that fake
+The `inline-measure/testing` entrypoint is for tests that fake
 layout: `clearInlineMeasurementCacheForTests` forgets the tabular glyph widths
 that `auto` accuracy calibrated against the DOM.
 
 ## Install
 
-The package is private and lives in GitHub Packages. Point bun at the registry
-for the `@maxvyshniakov` scope:
-
-```toml
-# bunfig.toml
-[install.scopes]
-maxvyshniakov = { url = "https://npm.pkg.github.com/", token = "$GITHUB_TOKEN" }
-```
-
-Then install with a token that has `read:packages`
-(`gh auth refresh -h github.com -s read:packages` adds the scope):
-
 ```sh
-export GITHUB_TOKEN=$(gh auth token)
-bun add @maxvyshniakov/inline-measure
+bun add inline-measure
 ```
+
+The package is published to npmjs.org with provenance. It was
+`@maxvyshniakov/inline-measure` on GitHub Packages up to 0.4.0; replace that
+dependency and its imports with `inline-measure`.
 
 Inline Measure needs no React, CSS or Tailwind setup.
 
