@@ -5,7 +5,7 @@ Application labels, routes and fetching stay outside the package.
 
 The package is `inline-measure` on npmjs.org, published with provenance from
 `.github/workflows/release-npm.yml` as part of a release (docs/VERSIONING.md). Changing the
-repository's visibility, a publication or enabling Pages needs explicit authorization.
+repository's visibility, a first publication or enabling Pages needs explicit authorization.
 Installing needs no token.
 
 Behavior changes need focused tests. Public contracts need matching README and
