@@ -8,10 +8,14 @@ Playwright Chromium/WebKit browsers with `bunx playwright install chromium webki
 Firefox uses installed Firefox through the `moz-firefox` BiDi channel; pass
 `--bundled-firefox` explicitly to use Playwright's patched browser instead.
 
+`bun run verify:browser` runs the correctness, font-loading and inline-box
+checks in all three engines, each stopped with its process tree after 2 minutes
+(`verify.browser` in `package-kit.config.mjs`); the commands below run one part:
+
 ```sh
-bun run verify:browser --browser chromium
-bun run verify:browser --browser firefox
-bun run verify:browser --browser webkit
+bun run check:browser --browser chromium
+bun run check:browser --browser firefox
+bun run check:browser --browser webkit
 bun run verify:fonts
 bun run verify:boxes
 bun run perf:test
