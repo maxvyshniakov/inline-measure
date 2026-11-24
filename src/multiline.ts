@@ -1,4 +1,4 @@
-import LineBreaker from "linebreak";
+import { LineBreaker } from "linebreak";
 import {
   applyTextTransform,
   getHorizontalBoxWidthFromComputed,

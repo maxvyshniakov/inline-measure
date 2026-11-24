@@ -4,6 +4,13 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+### Changed
+
+- Depends on `linebreak` `^2.0.0` instead of `^1.1.0`: ESM only, no `base64-js`, a sixth of the
+  install size, and Unicode 15 line-break data instead of 13. Break opportunities change only for
+  characters assigned in Unicode 14 and 15 (Kawi, Devanagari Extended-A, Egyptian hieroglyph format
+  controls, small kana extensions); the API is unchanged.
+
 ## 0.5.1 - 2026-11-23
 
 ### Changed
