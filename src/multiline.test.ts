@@ -3,7 +3,7 @@ import { measureInlineTextWidth } from "./index";
 import {
   computeMultilineMinContentWidth,
   prepareWrapText,
-} from "./internal";
+} from "./multiline-internal";
 import { measureInlineTextMultilineWidth } from "./multiline";
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;

@@ -97,7 +97,8 @@ that `auto` accuracy calibrated against the DOM.
 - `parseCssPixelValue` parses a CSS pixel string to a finite number, returning
   `0` for empty or unparseable values such as `"normal"`.
 - TypeScript types exported from the root entrypoint: `InlineMeasureAccuracy`,
-  `InlineTextMeasureInput`, and `InlineMeasureStyleMap`. From
+  `InlineTextMeasureInput`, and `InlineMeasureStyleMap` (a partial map of
+  `CSSStyleDeclaration` property names to string values). From
   `inline-measure/multiline`: `InlineTextMultilineMeasureInput`.
 
 ## Install

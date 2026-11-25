@@ -1,15 +1,17 @@
 import {
   applyTextTransform,
-  collapseWhitespace,
-  computeMultilineMinContentWidth,
   getHorizontalBoxWidthFromComputed,
   measureCanvasTextFromComputed,
   measureCanvasTextWithStyle,
-  prepareWrapText,
   resolveCanvasStyleFromComputed,
-  trimTrailingCollapsibleSpaces,
   watchFontLoads,
 } from "./internal.js";
+import {
+  collapseWhitespace,
+  computeMultilineMinContentWidth,
+  prepareWrapText,
+  trimTrailingCollapsibleSpaces,
+} from "./multiline-internal.js";
 import {
   createInlineMeasurementRoot,
   type InlineMeasureAccuracy,

@@ -511,6 +511,8 @@ describe("inline-measure", () => {
     const root = createInlineMeasurementRoot();
 
     expect(root.style.position).toBe("absolute");
+    expect(root.style.left).toBe("-9999px");
+    expect(root.style.top).toBe("-9999px");
     expect(root.style.visibility).toBe("hidden");
     expect(root.style.pointerEvents).toBe("none");
   });
@@ -618,6 +620,10 @@ describe("inline-measure exports", () => {
     expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: "Match" })).toBe(44);
     expect(exactProbeMarginLeft).toBe("");
     expect(exactProbeMarginRight).toBe("");
+
+    // Tabular auto path calibrates glyphs against DOM probes and adds border-box width without margins.
+    source.style.fontVariantNumeric = "tabular-nums";
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "12345" })).toBe(44);
     source.remove();
   });
 
@@ -790,15 +796,74 @@ describe("inline-measure exports", () => {
     source.remove();
   });
 
-  it("documents every exported value and type across all package entrypoints in README.md", () => {
+  it("exports only the pinned public API across all entrypoints and documents every export in README.md", () => {
     const rootDir = path.resolve(import.meta.dirname, "..");
     const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8")) as {
-      exports: Record<string, { import: string }>;
+      exports: Record<string, { types: string; import: string }>;
     };
     const readme = fs.readFileSync(path.join(rootDir, "README.md"), "utf8");
-    const exportedNames: string[] = [];
+    const expectedExports: Record<string, string[]> = {
+      ".": [
+        "InlineMeasureAccuracy",
+        "InlineMeasureStyleMap",
+        "InlineTextMeasureInput",
+        "createCanvasTextMeasurer",
+        "createInlineMeasurementRoot",
+        "createInlineTextMeasurementNode",
+        "getHorizontalBoxWidth",
+        "measureInlineElementWidth",
+        "measureInlineTextWidth",
+        "parseCssPixelValue",
+      ],
+      "./multiline": [
+        "InlineTextMultilineMeasureInput",
+        "measureInlineTextMultilineWidth",
+      ],
+      "./testing": [
+        "clearInlineMeasurementCacheForTests",
+      ],
+    };
+
+    const collectVariableExportNames = (declarationHead: string) => {
+      const names: string[] = [];
+      let depth = 0;
+      let segmentStart = 0;
+      const segments: string[] = [];
+      for (let i = 0; i < declarationHead.length; i += 1) {
+        const ch = declarationHead[i]!;
+        if (ch === "{" || ch === "[" || ch === "(") depth += 1;
+        else if (ch === "}" || ch === "]" || ch === ")") depth -= 1;
+        else if (ch === "," && depth === 0) {
+          segments.push(declarationHead.slice(segmentStart, i));
+          segmentStart = i + 1;
+        }
+      }
+      segments.push(declarationHead.slice(segmentStart));
+
+      for (const segment of segments) {
+        const lhs = segment.split("=")[0]!.trim();
+        if (!lhs) continue;
+        if (lhs.startsWith("{") || lhs.startsWith("[")) {
+          for (const binding of lhs.replace(/[{}[\]]/g, ",").split(",")) {
+            const cleaned = binding.trim().replace(/^\.\.\./, "");
+            if (!cleaned) continue;
+            const aliasPart = cleaned.includes(":") ? cleaned.split(":")[1]! : cleaned;
+            const ident = aliasPart.split("=")[0]!.trim();
+            if (/^[A-Za-z_$][\w$]*$/.test(ident)) names.push(ident);
+          }
+        } else {
+          const ident = lhs.split(":")[0]!.trim();
+          if (/^[A-Za-z_$][\w$]*$/.test(ident)) names.push(ident);
+        }
+      }
+      return names;
+    };
+
+    const actualExports: Record<string, string[]> = {};
+    const allExportedNames: string[] = [];
 
     for (const [subpath, target] of Object.entries(manifest.exports)) {
+      expect(target.types).toBe(target.import.replace(/\.js$/, ".d.ts"));
       const sourceRelPath = target.import.replace(/^\.\/dist\//, "src/").replace(/\.js$/, ".ts");
       const sourcePath = path.join(rootDir, sourceRelPath);
       const sourceText = fs
@@ -810,10 +875,21 @@ describe("inline-measure exports", () => {
         throw new Error(`Wildcard export is not allowed in public entrypoint ${subpath} (${sourceRelPath})`);
       }
 
+      const names: string[] = [];
+      if (/^\s*export\s+default\b/m.test(sourceText)) {
+        names.push("default");
+      }
+
       for (const match of sourceText.matchAll(
-        /^\s*export\s+(?:declare\s+)?(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)\b/gm,
+        /^\s*export\s+(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)\b/gm,
       )) {
-        exportedNames.push(match[1]!);
+        names.push(match[1]!);
+      }
+
+      for (const match of sourceText.matchAll(
+        /^\s*export\s+(?:declare\s+)?(?:const|let|var)\s+([^;\n]+)/gm,
+      )) {
+        names.push(...collectVariableExportNames(match[1]!));
       }
 
       for (const match of sourceText.matchAll(/^\s*export\s+(?:type\s+)?\{([^}]+)\}/gm)) {
@@ -821,13 +897,58 @@ describe("inline-measure exports", () => {
           const cleaned = specifier.trim().replace(/^type\s+/, "");
           if (!cleaned) continue;
           const parts = cleaned.split(/\s+as\s+/);
-          exportedNames.push((parts[1] ?? parts[0])!.trim());
+          names.push((parts[1] ?? parts[0])!.trim());
         }
       }
+
+      actualExports[subpath] = names.toSorted();
+      allExportedNames.push(...names);
     }
 
-    expect(exportedNames.length).toBeGreaterThan(0);
-    const undocumented = exportedNames.filter((name) => !readme.includes(`\`${name}\``));
+    expect(actualExports).toEqual(expectedExports);
+    const undocumented = allExportedNames.filter((name) => !readme.includes(`\`${name}\``));
     expect(undocumented).toEqual([]);
+  });
+
+  it("keeps linebreak out of the transitive import graphs of the root and testing entrypoints", () => {
+    const rootDir = path.resolve(import.meta.dirname, "..");
+
+    const collectTransitiveImports = (entryRelPath: string, extension: ".ts" | ".js") => {
+      const visited = new Set<string>();
+      const specifiers = new Set<string>();
+      const queue = [path.join(rootDir, entryRelPath)];
+
+      while (queue.length > 0) {
+        const current = queue.pop()!;
+        if (visited.has(current) || !fs.existsSync(current)) continue;
+        visited.add(current);
+        const text = fs.readFileSync(current, "utf8");
+        for (const match of text.matchAll(/(?:import|export)\s+(?:[^"']*?\s+from\s+)?["']([^"']+)["']/g)) {
+          const specifier = match[1]!;
+          specifiers.add(specifier);
+          if (specifier.startsWith(".")) {
+            const resolved = path.resolve(
+              path.dirname(current),
+              extension === ".ts" ? specifier.replace(/\.js$/, ".ts") : specifier,
+            );
+            queue.push(resolved);
+          }
+        }
+      }
+      return specifiers;
+    };
+
+    for (const entry of ["src/index.ts", "src/testing.ts"]) {
+      const imports = collectTransitiveImports(entry, ".ts");
+      expect(imports.has("linebreak")).toBe(false);
+      expect(imports.has("./multiline-internal.js")).toBe(false);
+    }
+
+    for (const distEntry of ["dist/index.js", "dist/testing.js"]) {
+      if (!fs.existsSync(path.join(rootDir, distEntry))) continue;
+      const imports = collectTransitiveImports(distEntry, ".js");
+      expect(imports.has("linebreak")).toBe(false);
+      expect(imports.has("./multiline-internal.js")).toBe(false);
+    }
   });
 });

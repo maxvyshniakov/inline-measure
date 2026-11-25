@@ -13,14 +13,21 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
   `applyInlineMeasurementStyles`, `copyInlineTextMeasurementStyles`,
   `measureInlineTextWidthFast`, `measureInlineTextWidthAuto`, and
   `measureInlineTextWidthExact`. Use `measureInlineTextWidth` with
-  `accuracy: "fast" | "auto" | "exact"` instead of the accuracy-specific
-  functions, and `createInlineTextMeasurementNode` instead of
-  `copyInlineTextMeasurementStyles`.
-  No transition period: the package only just moved to npmjs.org as `inline-measure` (0.5.x), none of the 10 internal helpers are used by Data Grid, Text Truncate, Sid-Kit, or Straylight, and narrowing before 1.0 avoids carrying undocumented internal APIs forward.
+  `accuracy: "fast" | "auto" | "exact"`, `createInlineTextMeasurementNode`,
+  `createInlineMeasurementRoot`, and `measureInlineTextMultilineWidth` instead.
+  No transition period: the package only just moved to npmjs.org as
+  `inline-measure` (0.5.x), none of the 10 internal helpers are used by Data
+  Grid, Text Truncate, Sid-Kit, or Straylight, and narrowing before 1.0 avoids
+  carrying undocumented internal APIs forward.
 
 ### Changed
 
-- Documented the remaining helper functions and exported types (`InlineMeasureAccuracy`, `parseCssPixelValue`, `createInlineMeasurementRoot`, `createInlineTextMeasurementNode`, `InlineTextMeasureInput`, `InlineTextMultilineMeasureInput`, `InlineMeasureStyleMap`) and the border-box / negative-margin contract of `measureInlineTextWidth` in `README.md`.
+- Documented the remaining helper functions and exported types
+  (`InlineMeasureAccuracy`, `parseCssPixelValue`,
+  `createInlineMeasurementRoot`, `createInlineTextMeasurementNode`,
+  `InlineTextMeasureInput`, `InlineTextMultilineMeasureInput`,
+  `InlineMeasureStyleMap`) and the border-box / negative-margin contract of
+  `measureInlineTextWidth` in `README.md`.
 - Depends on `linebreak` `^2.0.0` instead of `^1.1.0`: ESM only, no `base64-js`, a sixth of the
   install size, and Unicode 15 line-break data instead of 13. Break opportunities change only for
   characters assigned in Unicode 14 and 15 (Kawi, Devanagari Extended-A, Egyptian hieroglyph format
