@@ -9,9 +9,13 @@ await document.fonts.ready;
 const width = measureInlineTextWidth({ sourceElement: element, text: "Hello" });
 ```
 
-`measureInlineTextWidth` returns the width in pixels that `text` would take
-inside `sourceElement`: its font and text styles, plus its horizontal padding
-and border. Measure after fonts are ready. `accuracy` picks the method:
+`measureInlineTextWidth` returns the element's border-box width in pixels for
+`text`: its font and text styles, plus `sourceElement`'s horizontal padding and
+border (`paddingLeft + paddingRight + borderLeftWidth + borderRightWidth`).
+Margins are not included, so a negative margin on `sourceElement` (for example,
+`padding-inline: 1px; margin-inline: -1px` used to give a search highlight paint
+room) does not reduce the returned width. Measure after fonts are ready.
+`accuracy` picks the method:
 
 - `"auto"` (default) measures with canvas and calibrates tabular numerals
   against the DOM.
@@ -84,6 +88,17 @@ consumer's saved widths or schedule another fit.
 The `inline-measure/testing` entrypoint is for tests that fake
 layout: `clearInlineMeasurementCacheForTests` forgets the tabular glyph widths
 that `auto` accuracy calibrated against the DOM.
+
+## Probes and types
+
+- `createInlineMeasurementRoot` creates a hidden offscreen container for
+  batched DOM measurements, and `createInlineTextMeasurementNode` builds an
+  unwrapped `span` styled like `sourceElement` for `text`.
+- `parseCssPixelValue` parses a CSS pixel string to a finite number, returning
+  `0` for empty or unparseable values such as `"normal"`.
+- TypeScript types exported from the root entrypoint: `InlineMeasureAccuracy`,
+  `InlineTextMeasureInput`, and `InlineMeasureStyleMap`. From
+  `inline-measure/multiline`: `InlineTextMultilineMeasureInput`.
 
 ## Install
 

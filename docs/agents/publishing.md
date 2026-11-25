@@ -11,9 +11,9 @@
 - The hook holds one slotfather slot for the installs and every verification.
 
 ## Push
-- `dev`: `~/straylight/tools/lane promote <sha>`, with `<sha>` from `git rev-parse HEAD`. Push a SHA, never `HEAD` or a
+- `dev`: `lanefather promote <sha>`, with `<sha>` from `git rev-parse HEAD`. Push a SHA, never `HEAD` or a
   branch by name.
-- `dev` and `main`: `STRAYLIGHT_LANE_REVIEW_START=manual ~/straylight/tools/lane promote <sha> --ship`.
+- `dev` and `main`: `LANEFATHER_REVIEW_START=manual lanefather promote <sha> --ship`.
 - promote takes the landing lock that `.githooks/reference-transaction` requires of agent sessions, pushes the SHA and
   fast-forwards the local branches. Never use a bare `git push` to `dev` or `main`, and never force-push.
 - Landing a task branch: rebase onto `origin/dev`, push the tip.

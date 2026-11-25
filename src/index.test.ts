@@ -1,17 +1,13 @@
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  applyInlineMeasurementStyles,
-  copyInlineTextMeasurementStyles,
   createCanvasTextMeasurer,
   createInlineMeasurementRoot,
   createInlineTextMeasurementNode,
   getHorizontalBoxWidth,
-  INLINE_MEASUREMENT_ROOT_STYLES,
   measureInlineElementWidth,
   measureInlineTextWidth,
-  measureInlineTextWidthAuto,
-  measureInlineTextWidthExact,
-  measureInlineTextWidthFast,
   parseCssPixelValue,
 } from "./index";
 import { clearInlineMeasurementCacheForTests } from "./testing";
@@ -87,7 +83,8 @@ describe("inline-measure", () => {
     source.style.paddingRight = "5px";
     document.body.append(source);
 
-    const width = measureInlineTextWidthFast({
+    const width = measureInlineTextWidth({
+      accuracy: "fast",
       sourceElement: source,
       text: "Asset",
     });
@@ -117,7 +114,8 @@ describe("inline-measure", () => {
     source.style.letterSpacing = "2px";
     document.body.append(source);
 
-    const width = measureInlineTextWidthFast({
+    const width = measureInlineTextWidth({
+      accuracy: "fast",
       sourceElement: source,
       text: "ABCD",
     });
@@ -545,25 +543,7 @@ describe("inline-measure exports", () => {
     expect(measureInlineElementWidth(element)).toBe(123.5);
   });
 
-  it("applies the defined styles and leaves undefined ones untouched", () => {
-    const element = document.createElement("div");
-    element.style.fontFamily = "Inter";
-
-    // "undefined" would be a valid font family name, so skipping must be explicit.
-    applyInlineMeasurementStyles(element, { position: "absolute", fontFamily: undefined });
-
-    expect(element.style.position).toBe("absolute");
-    expect(element.style.fontFamily).toBe("Inter");
-  });
-
-  it("styles measurement roots with the exported root styles", () => {
-    const hostRoot = document.createElement("div");
-    applyInlineMeasurementStyles(hostRoot, INLINE_MEASUREMENT_ROOT_STYLES);
-
-    expect(createInlineMeasurementRoot().style.cssText).toBe(hostRoot.style.cssText);
-  });
-
-  it("copies the source's text and inline box styles onto an inline-block, unwrapped target", () => {
+  it("builds a measurement node with the source's text and inline box styles", () => {
     const source = document.createElement("span");
     source.style.fontSize = "13px";
     source.style.letterSpacing = "1px";
@@ -572,11 +552,11 @@ describe("inline-measure exports", () => {
     source.style.width = "300px";
     source.style.display = "flex";
     document.body.append(source);
-    const target = document.createElement("span");
 
-    copyInlineTextMeasurementStyles(target, source);
+    const target = createInlineTextMeasurementNode({ sourceElement: source, text: "Test" });
 
     // Not inline-flex: a flex container drops a whitespace-only text run (0.2.1).
+    expect(target.textContent).toBe("Test");
     expect(target.style.display).toBe("inline-block");
     expect(target.style.whiteSpace).toBe("pre");
     expect(target.style.width).toBe("max-content");
@@ -601,8 +581,43 @@ describe("inline-measure exports", () => {
     document.body.append(source);
     const bodyChildren = document.body.childElementCount;
 
-    expect(measureInlineTextWidthExact({ sourceElement: source, text: "Folder" })).toBe(72);
+    expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: "Folder" })).toBe(72);
     expect(document.body.childElementCount).toBe(bodyChildren);
+    source.remove();
+  });
+
+  it("returns the border-box width and does not subtract negative margins", () => {
+    stubCanvasMeasurement(8);
+    let exactProbeMarginLeft: string | undefined;
+    let exactProbeMarginRight: string | undefined;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        exactProbeMarginLeft = this.style.marginLeft;
+        exactProbeMarginRight = this.style.marginRight;
+        const padding = (Number.parseFloat(this.style.paddingLeft) || 0)
+          + (Number.parseFloat(this.style.paddingRight) || 0);
+        const border = (Number.parseFloat(this.style.borderLeftWidth) || 0)
+          + (Number.parseFloat(this.style.borderRightWidth) || 0);
+        return (this.textContent?.length ?? 0) * 8 + padding + border;
+      },
+    });
+    const source = document.createElement("span");
+    source.style.paddingLeft = "1px";
+    source.style.paddingRight = "1px";
+    source.style.borderStyle = "solid";
+    source.style.borderWidth = "0 1px";
+    source.style.marginLeft = "-1px";
+    source.style.marginRight = "-1px";
+    document.body.append(source);
+
+    // 5 chars * 8px + 2px padding + 2px border = 44px; -1px horizontal margins do not cancel padding.
+    expect(getHorizontalBoxWidth(source)).toBe(4);
+    expect(measureInlineTextWidth({ accuracy: "fast", sourceElement: source, text: "Match" })).toBe(44);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "Match" })).toBe(44);
+    expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: "Match" })).toBe(44);
+    expect(exactProbeMarginLeft).toBe("");
+    expect(exactProbeMarginRight).toBe("");
     source.remove();
   });
 
@@ -614,7 +629,7 @@ describe("inline-measure exports", () => {
     source.style.paddingRight = "2px";
     document.body.append(source);
 
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "Asset" })).toBe(42);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "Asset" })).toBe(42);
     expect(offsetWidth).not.toHaveBeenCalled();
     source.remove();
   });
@@ -631,7 +646,7 @@ describe("inline-measure exports", () => {
     source.style.fontVariantNumeric = "tabular-nums";
     document.body.append(source);
 
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "123" })).toBe(21);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "123" })).toBe(21);
     source.remove();
   });
 
@@ -641,7 +656,7 @@ describe("inline-measure exports", () => {
     document.body.append(source);
     const getComputedStyleSpy = vi.spyOn(window, "getComputedStyle");
 
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "Asset" })).toBe(40);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "Asset" })).toBe(40);
     expect(getComputedStyleSpy).toHaveBeenCalledTimes(1);
     source.remove();
   });
@@ -659,7 +674,7 @@ describe("inline-measure exports", () => {
     document.body.append(source);
     const getComputedStyleSpy = vi.spyOn(window, "getComputedStyle");
 
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "$12,345.67" })).toBe(70);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "$12,345.67" })).toBe(70);
     expect(getComputedStyleSpy).toHaveBeenCalledTimes(1);
     source.remove();
   });
@@ -678,9 +693,9 @@ describe("inline-measure exports", () => {
     document.body.append(source);
 
     // 5 code points: "7", "×", "😀", " ", "9" -> 5 * 8 + 4 * 1 = 44
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "7×😀 9" })).toBe(44);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "7×😀 9" })).toBe(44);
     // Warm hit with reordered glyphs produces the exact same width
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "9 😀×7" })).toBe(44);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "9 😀×7" })).toBe(44);
     source.remove();
   });
 
@@ -698,9 +713,9 @@ describe("inline-measure exports", () => {
 
     for (let repeat = 0; repeat < 3; repeat += 1) {
       source.style.fontSize = "12px";
-      expect(measureInlineTextWidthExact({ sourceElement: source, text: "Alpha" })).toBe(60);
+      expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: "Alpha" })).toBe(60);
       source.style.fontSize = "16px";
-      expect(measureInlineTextWidthExact({ sourceElement: source, text: "Beta" })).toBe(64);
+      expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: source, text: "Beta" })).toBe(64);
       expect(document.body.childElementCount).toBe(children);
     }
 
@@ -723,18 +738,18 @@ describe("inline-measure exports", () => {
       .mockImplementation(function (this: HTMLElement) {
         if (!inNested && nestedWidth === undefined) {
           inNested = true;
-          nestedWidth = measureInlineTextWidthExact({ sourceElement: innerSource, text: "Hi" });
+          nestedWidth = measureInlineTextWidth({ accuracy: "exact", sourceElement: innerSource, text: "Hi" });
           inNested = false;
         }
         return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "0");
       });
 
-    expect(measureInlineTextWidthExact({ sourceElement: outerSource, text: "Hello" })).toBe(50);
+    expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: outerSource, text: "Hello" })).toBe(50);
     expect(nestedWidth).toBe(40);
     expect(document.body.childElementCount).toBe(children);
 
     offsetSpy.mockImplementationOnce(() => { throw new Error("exact read failed"); });
-    expect(() => measureInlineTextWidthExact({ sourceElement: outerSource, text: "Fail" }))
+    expect(() => measureInlineTextWidth({ accuracy: "exact", sourceElement: outerSource, text: "Fail" }))
       .toThrow("exact read failed");
     expect(document.body.childElementCount).toBe(children);
 
@@ -742,7 +757,7 @@ describe("inline-measure exports", () => {
       return (this.textContent?.length ?? 0) * Number.parseFloat(this.style.fontSize || "0");
     });
     const createElement = vi.spyOn(document, "createElement");
-    expect(measureInlineTextWidthExact({ sourceElement: outerSource, text: "After" })).toBe(50);
+    expect(measureInlineTextWidth({ accuracy: "exact", sourceElement: outerSource, text: "After" })).toBe(50);
     expect(createElement.mock.calls.filter(([tag]) => tag === "span" || tag === "div")).toHaveLength(0);
 
     outerSource.remove();
@@ -765,13 +780,54 @@ describe("inline-measure exports", () => {
 
     for (let size = 10; size < 80; size += 1) {
       source.style.fontSize = `${size}px`;
-      expect(measureInlineTextWidthAuto({ sourceElement: source, text: "1" })).toBe(7);
+      expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "1" })).toBe(7);
     }
     const readsBeforeFirstReuse = reads;
     // The earliest signature (10px) was evicted after >64 distinct signatures.
     source.style.fontSize = "10px";
-    expect(measureInlineTextWidthAuto({ sourceElement: source, text: "1" })).toBe(7);
+    expect(measureInlineTextWidth({ accuracy: "auto", sourceElement: source, text: "1" })).toBe(7);
     expect(reads).toBe(readsBeforeFirstReuse + 1);
     source.remove();
+  });
+
+  it("documents every exported value and type across all package entrypoints in README.md", () => {
+    const rootDir = path.resolve(import.meta.dirname, "..");
+    const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8")) as {
+      exports: Record<string, { import: string }>;
+    };
+    const readme = fs.readFileSync(path.join(rootDir, "README.md"), "utf8");
+    const exportedNames: string[] = [];
+
+    for (const [subpath, target] of Object.entries(manifest.exports)) {
+      const sourceRelPath = target.import.replace(/^\.\/dist\//, "src/").replace(/\.js$/, ".ts");
+      const sourcePath = path.join(rootDir, sourceRelPath);
+      const sourceText = fs
+        .readFileSync(sourcePath, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/[^\n]*/g, "");
+
+      if (/^\s*export\s+\*/m.test(sourceText)) {
+        throw new Error(`Wildcard export is not allowed in public entrypoint ${subpath} (${sourceRelPath})`);
+      }
+
+      for (const match of sourceText.matchAll(
+        /^\s*export\s+(?:declare\s+)?(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)\b/gm,
+      )) {
+        exportedNames.push(match[1]!);
+      }
+
+      for (const match of sourceText.matchAll(/^\s*export\s+(?:type\s+)?\{([^}]+)\}/gm)) {
+        for (const specifier of match[1]!.split(",")) {
+          const cleaned = specifier.trim().replace(/^type\s+/, "");
+          if (!cleaned) continue;
+          const parts = cleaned.split(/\s+as\s+/);
+          exportedNames.push((parts[1] ?? parts[0])!.trim());
+        }
+      }
+    }
+
+    expect(exportedNames.length).toBeGreaterThan(0);
+    const undocumented = exportedNames.filter((name) => !readme.includes(`\`${name}\``));
+    expect(undocumented).toEqual([]);
   });
 });

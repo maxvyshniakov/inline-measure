@@ -20,14 +20,6 @@ export interface InlineTextMeasureInput {
   text: string;
 }
 
-export const INLINE_MEASUREMENT_ROOT_STYLES = {
-  position: "absolute",
-  left: "-9999px",
-  top: "-9999px",
-  visibility: "hidden",
-  pointerEvents: "none",
-} satisfies InlineMeasureStyleMap;
-
 // Indices 1..FONT_SHORTHAND_RESET_END are CSS properties reset by assigning
 // `style.font`, so they are rewritten whenever the shorthand changes.
 const FONT_SHORTHAND_RESET_END = 13;
@@ -74,19 +66,6 @@ interface ExactSingleLineProbe {
 // Retain only one detached probe per document, never measured widths.
 // Reattaching it still lets the browser resolve loaded fonts and native layout.
 const exactSingleLineProbes = /* @__PURE__ */ new WeakMap<Document, ExactSingleLineProbe>();
-
-export function applyInlineMeasurementStyles(
-  element: HTMLElement,
-  styles: InlineMeasureStyleMap,
-) {
-  const style = element.style;
-  for (const property in styles) {
-    if (!Object.prototype.hasOwnProperty.call(styles, property)) continue;
-    const value = styles[property as keyof InlineMeasureStyleMap];
-    if (value === undefined) continue;
-    style[property as never] = value as never;
-  }
-}
 
 export function parseCssPixelValue(value: string) {
   return parseCssPixelValueInternal(value);
@@ -304,14 +283,14 @@ function measureInlineTextWidthFastFromComputed(computed: CSSStyleDeclaration, t
     + getHorizontalBoxWidthFromComputed(computed);
 }
 
-export function measureInlineTextWidthFast({
+function measureInlineTextWidthFast({
   sourceElement,
   text,
 }: InlineTextMeasureInput) {
   return measureInlineTextWidthFastFromComputed(window.getComputedStyle(sourceElement), text);
 }
 
-export function measureInlineTextWidthAuto(input: InlineTextMeasureInput) {
+function measureInlineTextWidthAuto(input: InlineTextMeasureInput) {
   const computed = window.getComputedStyle(input.sourceElement);
   const fontVariantNumeric = computed.fontVariantNumeric;
   if (hasTabularNumericStyle(input.sourceElement, computed, fontVariantNumeric)) {
@@ -321,7 +300,7 @@ export function measureInlineTextWidthAuto(input: InlineTextMeasureInput) {
   return measureInlineTextWidthFastFromComputed(computed, input.text);
 }
 
-export function copyInlineTextMeasurementStyles(
+function copyInlineTextMeasurementStyles(
   target: HTMLElement,
   sourceElement: HTMLElement,
 ) {
@@ -390,7 +369,7 @@ function acquireExactSingleLineProbe(
   return probe;
 }
 
-export function measureInlineTextWidthExact(input: InlineTextMeasureInput) {
+function measureInlineTextWidthExact(input: InlineTextMeasureInput) {
   const ownerDocument = input.sourceElement.ownerDocument;
   const computed = window.getComputedStyle(input.sourceElement);
   const probe = acquireExactSingleLineProbe(ownerDocument, computed, input.text);

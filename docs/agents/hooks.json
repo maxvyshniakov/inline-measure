@@ -1,1 +1,1 @@
-{"lanefather_commands": ["tools/lane"], "release_standing": {"packages": ["inline-measure"], "levels": ["patch", "minor"]}}
+{"release_standing": {"packages": ["inline-measure"], "levels": ["patch", "minor"]}}

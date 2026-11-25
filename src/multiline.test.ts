@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { measureInlineTextWidthFast } from "./index";
+import { measureInlineTextWidth } from "./index";
 import {
   computeMultilineMinContentWidth,
-  measureInlineTextMultilineWidth,
   prepareWrapText,
-} from "./multiline";
+} from "./internal";
+import { measureInlineTextMultilineWidth } from "./multiline";
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
@@ -339,7 +339,8 @@ describe("measureInlineTextMultilineWidth", () => {
     source.style.letterSpacing = "1px";
     document.body.append(source);
 
-    expect(measureInlineTextWidthFast({
+    expect(measureInlineTextWidth({
+      accuracy: "fast",
       sourceElement: source,
       text: "aa bb",
     })).toBe(9);
@@ -358,11 +359,13 @@ describe("measureInlineTextMultilineWidth", () => {
       text: "aa  bb",
       lines: 1,
     });
-    const normalizedFastWidth = measureInlineTextWidthFast({
+    const normalizedFastWidth = measureInlineTextWidth({
+      accuracy: "fast",
       sourceElement: source,
       text: "aa bb",
     });
-    const rawFastWidth = measureInlineTextWidthFast({
+    const rawFastWidth = measureInlineTextWidth({
+      accuracy: "fast",
       sourceElement: source,
       text: "aa  bb",
     });
