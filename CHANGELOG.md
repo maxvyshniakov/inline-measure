@@ -4,6 +4,8 @@ Versions and release rules: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Unreleased
 
+## 0.6.0 - 2026-11-27
+
 ### Breaking
 
 - Narrowed the public exports of `inline-measure` and `inline-measure/multiline`
