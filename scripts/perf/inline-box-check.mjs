@@ -1,3 +1,4 @@
+import "./tmpdir.mjs";
 import { createServer } from "vite";
 import { chromium, firefox, webkit } from "playwright";
 import { readFile, writeFile, mkdir, mkdtemp, symlink, rm } from "node:fs/promises";
