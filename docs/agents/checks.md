@@ -19,8 +19,11 @@
 - `bun run verify:browser`: correctness (`scripts/perf/run.mjs --correctness`), font loading and inline boxes in
   Chromium, Firefox (the installed stable, over WebDriver BiDi) and WebKit, one script at a time behind one slot, each
   stopped with its process tree after 2 minutes. package-kit's release gate runs it after `verify --release`; plain
-  `bun run verify`, the pre-push hook and hosted CI do not (no Firefox or WebKit on the hosted runner). Run it for
-  changes under `src/` or `scripts/perf/`; `-- --keep-going` reports every engine.
+  `bun run verify` and the pre-push hook do not. `.github/workflows/check.yml` runs a separate `browser` job on
+  GitHub-hosted `ubuntu-latest` that installs Playwright Chromium, Firefox (`--bundled-firefox`) and WebKit and runs
+  `check:browser` for all three engines, `verify:fonts --bundled-firefox`, `verify:boxes --bundled-firefox`,
+  `perf:test`, and `perf:check-ratios --strict`. Run `verify:browser` locally for changes under `src/` or
+  `scripts/perf/`; `-- --keep-going` reports every engine.
 - Independent native-DOM oracle and timing captures:
   [commands, setup, baselines and measurement policy](../performance/README.md).
 - The package has no Storybook of its own. Consumer demos live in Data Grid;

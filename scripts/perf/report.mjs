@@ -84,3 +84,79 @@ export function compareReports(current, baseline) {
   });
   return { method: "Deterministic bootstrap 95% median intervals; separation must exceed observed IQR or one timer quantum per batch, whichever is larger", errors, scenarios };
 }
+
+// Compare two reports by per-scenario median ratio (afterMs / beforeMs) rather
+// than absolute wall-clock times. Enforces identical workload/schema/package
+// and DOM correctness while allowing an explicit maxRatio threshold.
+export function compareRatios(current, baseline, options = {}) {
+  const maxRatio = options.maxRatio ?? 1.1;
+  const maxGeoMeanRatio = options.maxGeoMeanRatio ?? 1.05;
+  const errors = [];
+  for (const key of ["schemaVersion", "package"]) {
+    if (JSON.stringify(current[key]) !== JSON.stringify(baseline[key])) {
+      errors.push(`Incompatible ${key}`);
+    }
+  }
+  if (current.browser?.name !== baseline.browser?.name) {
+    errors.push("Incompatible browser");
+  }
+  if (current.environment?.workloadDigest !== baseline.environment?.workloadDigest
+    || current.environment?.harnessVersion !== baseline.environment?.harnessVersion
+    || current.environment?.scenarioPattern !== baseline.environment?.scenarioPattern) {
+    errors.push("Incompatible workload");
+  }
+  if (errors.length) {
+    return { method: `Ratio gate (maxRatio=${maxRatio}, maxGeoMeanRatio=${maxGeoMeanRatio})`, errors, geoMeanRatio: Number.NaN, scenarios: [] };
+  }
+  const old = new Map(baseline.scenarios.map((scenario) => [scenario.id, scenario]));
+  if (old.size !== current.scenarios.length) errors.push("Incompatible scenario count");
+  let logSum = 0;
+  let ratioCount = 0;
+  const scenarios = current.scenarios.map((scenario) => {
+    const previous = old.get(scenario.id);
+    if (!previous) {
+      errors.push(`Missing baseline scenario: ${scenario.id}`);
+      return { id: scenario.id };
+    }
+    const widths = scenario.correctness.widths;
+    const previousWidths = previous.correctness.widths;
+    if (widths.length !== previousWidths.length || widths.some((width, index) => {
+      if (Math.abs(width - previousWidths[index]) <= 0.001) return false;
+      const expected = scenario.correctness.expectedWidths?.[index];
+      return expected === undefined || Math.abs(width - expected) >= Math.abs(previousWidths[index] - expected);
+    })) {
+      errors.push(`Changed output: ${scenario.id}`);
+    }
+    if (scenario.correctness.maxErrorPx > previous.correctness.maxErrorPx + 0.001
+      || scenario.correctness.underflows > previous.correctness.underflows) {
+      errors.push(`DOM accuracy regression: ${scenario.id}`);
+    }
+    const medianRatio = scenario.medianMs / previous.medianMs;
+    if (Number.isFinite(medianRatio) && medianRatio > 0) {
+      logSum += Math.log(medianRatio);
+      ratioCount += 1;
+    }
+    const ratioRegression = medianRatio > maxRatio;
+    if (ratioRegression) {
+      errors.push(`Ratio regression: ${scenario.id} (${medianRatio.toFixed(3)}x > ${maxRatio}x)`);
+    }
+    return {
+      id: scenario.id,
+      beforeMs: previous.medianMs,
+      afterMs: scenario.medianMs,
+      medianRatio,
+      changePercent: (medianRatio - 1) * 100,
+      ratioRegression,
+    };
+  });
+  const geoMeanRatio = ratioCount > 0 ? Math.exp(logSum / ratioCount) : Number.NaN;
+  if (Number.isFinite(geoMeanRatio) && geoMeanRatio > maxGeoMeanRatio) {
+    errors.push(`Geometric mean ratio regression: ${geoMeanRatio.toFixed(3)}x > ${maxGeoMeanRatio}x`);
+  }
+  return {
+    method: `Ratio gate (maxRatio=${maxRatio}, maxGeoMeanRatio=${maxGeoMeanRatio})`,
+    errors,
+    geoMeanRatio,
+    scenarios,
+  };
+}

@@ -25,3 +25,21 @@ jobs:
     uses: maxvyshniakov/package-kit/.github/workflows/verify.yml@v1.0.1
     with:
       timeout-minutes: 15
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: maxvyshniakov/package-kit/actions/setup-bun@v1.0.1
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium firefox webkit
+      - run: bun run check:browser --browser chromium
+      - run: bun run check:browser --browser firefox --bundled-firefox
+      - run: bun run check:browser --browser webkit
+      - run: bun run verify:fonts --bundled-firefox
+      - run: bun run verify:boxes --bundled-firefox
+      - run: bun run perf:test
+      - run: bun run perf:check-ratios --strict

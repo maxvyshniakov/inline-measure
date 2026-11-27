@@ -27,7 +27,7 @@ try {
   for (const engine of engines) {
     console.log(`Checking delayed font in ${engine}`);
     const browser = await ({ chromium, firefox, webkit }[engine]).launch({ headless: true,
-      ...(engine === "firefox" ? { channel: "moz-firefox" } : {}),
+      ...(engine === "firefox" && !args.includes("--bundled-firefox") ? { channel: "moz-firefox" } : {}),
     });
     try {
       const page = await browser.newPage();
@@ -65,7 +65,7 @@ try {
         await document.fonts.ready;
         const source = document.createElement("span");
         source.style.cssText = 'font: 14px LateProbe, monospace; display: inline-block; white-space: pre; font-variant-numeric: tabular-nums;';
-        source.textContent = "1111 2222 3333";
+        source.textContent = "1111 2222 3333 4444 5555";
         document.body.append(source);
         const canvas = createCanvasTextMeasurer(getComputedStyle(source));
         const beforeCanvas = canvas(source.textContent);
@@ -92,7 +92,7 @@ try {
         };
         const overlapping = document.createElement("span");
         overlapping.style.cssText = 'font:14px OverlappingProbe,monospace;display:inline-block;white-space:pre;font-variant-numeric:tabular-nums';
-        overlapping.textContent = "1111 2222 3333";
+        overlapping.textContent = "1111 2222 3333 4444 5555";
         document.body.append(overlapping);
         const requiredFace = new FontFace("OverlappingProbe", 'url("/late-inter.woff2?required=1")');
         const blockerFace = new FontFace("UnrelatedProbe", 'url("/late-inter.woff2?blocker=1")');

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { compareReports, summarize } from "./report.mjs";
+import { compareRatios, compareReports, summarize } from "./report.mjs";
 
 it("calculates median and nearest-rank p95 without sorting the raw samples", () => {
   const samples = [5, 1, 4, 2, 3];
@@ -64,4 +64,39 @@ it("treats a separated median within observed robust repeat spread as inconclusi
   current.scenarios[0]!.samplesMs = [1.06, 1.06, 1.06, 1.06, 1.06, 1.06, 1.06];
   current.scenarios[0]!.medianMs = 1.06;
   expect(compareReports(current, baseline).errors).toEqual([]);
+});
+
+const ratioReport = (medianMs = 2, machine = "a") => ({
+  schemaVersion: 1,
+  package: "inline-measure",
+  browser: { name: "chromium", version: "1" },
+  environment: { machine, workloadDigest: "digest-1", harnessVersion: 2, scenarioPattern: ".*" },
+  scenarios: [{
+    id: "one", samplesMs: [medianMs, medianMs, medianMs], medianMs, counters: {},
+    correctness: { widths: [40], maxErrorPx: 0, underflows: 0 },
+  }],
+});
+
+it("compares ratios across environments with identical workloads and rejects ratio regressions", () => {
+  const baseline = ratioReport(2, "machine-a");
+  const faster = ratioReport(1.5, "machine-b");
+  const pass = compareRatios(faster, baseline, { maxRatio: 1.1, maxGeoMeanRatio: 1.05 });
+  expect(pass.errors).toEqual([]);
+  expect(pass.geoMeanRatio).toBeCloseTo(0.75, 5);
+
+  const slower = ratioReport(2.5, "machine-b");
+  const fail = compareRatios(slower, baseline, { maxRatio: 1.1, maxGeoMeanRatio: 1.05 });
+  expect(fail.errors).toContain("Ratio regression: one (1.250x > 1.1x)");
+  expect(fail.errors).toContain("Geometric mean ratio regression: 1.250x > 1.05x");
+});
+
+it("rejects workload mismatches and correctness regressions in compareRatios", () => {
+  const baseline = ratioReport(2);
+  const wrongWorkload = ratioReport(1);
+  wrongWorkload.environment.workloadDigest = "digest-2";
+  expect(compareRatios(wrongWorkload, baseline).errors).toEqual(["Incompatible workload"]);
+
+  const badWidth = ratioReport(1);
+  badWidth.scenarios[0]!.correctness.widths = [39];
+  expect(compareRatios(badWidth, baseline).errors).toContain("Changed output: one");
 });

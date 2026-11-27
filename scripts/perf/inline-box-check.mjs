@@ -43,7 +43,7 @@ try {
   await server.listen();
   for (const engine of engines) {
     const browser = await ({ chromium, firefox, webkit }[engine]).launch({ headless: true,
-      ...(engine === "firefox" ? { channel: "moz-firefox" } : {}),
+      ...(engine === "firefox" && !args.includes("--bundled-firefox") ? { channel: "moz-firefox" } : {}),
     });
     try {
       const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });

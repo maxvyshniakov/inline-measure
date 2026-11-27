@@ -46,6 +46,7 @@
     "test:perf": "package-kit heavy 1 vitest --config vitest.config.ts run scripts/perf/report.test.ts",
     "perf:capture": "bun run perf",
     "perf:report": "node scripts/perf/print-report.mjs",
+    "perf:check-ratios": "node scripts/perf/check-ratios.mjs",
     "perf:test": "bun run test:perf",
     "verify:fonts": "package-kit heavy 1 node scripts/perf/font-check.mjs",
     "verify:boxes": "package-kit heavy 1 node scripts/perf/inline-box-check.mjs"

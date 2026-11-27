@@ -1,6 +1,7 @@
 import { createServer } from "vite";
 import { chromium, firefox, webkit } from "playwright";
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile, writeFile, mkdir, mkdtemp, symlink, rm } from "node:fs/promises";
 import { hostname, cpus, platform, release, arch, tmpdir } from "node:os";
 import { resolve, dirname } from "node:path";
@@ -33,10 +34,23 @@ if (ref) {
     await writeFile(resolve(scratch, file), execFileSync("git", ["show", `${ref}:${file}`]));
   }
   await symlink(resolve("node_modules"), resolve(scratch, "node_modules"));
+  // Historical refs before linebreak 2.0.0 use a default import; shim both
+  // default and named exports against the installed linebreak package.
+  await writeFile(
+    resolve(scratch, ".linebreak-compat.mjs"),
+    'import { LineBreaker } from "./node_modules/linebreak/src/linebreaker.js";\nexport { LineBreaker };\nexport default LineBreaker;\n',
+  );
 }
 const viteCache = await mkdtemp(resolve(tmpdir(), "inline-measure-vite-"));
 const server = await createServer({ configFile: false, cacheDir: viteCache,
-  ...(scratch ? { resolve: { alias: { "/src": resolve(scratch, "src") } } } : {}),
+  ...(scratch ? {
+    resolve: {
+      alias: [
+        { find: "/src", replacement: resolve(scratch, "src") },
+        ...(ref ? [{ find: /^linebreak$/, replacement: resolve(scratch, ".linebreak-compat.mjs") }] : []),
+      ],
+    },
+  } : {}),
   server: { host: "127.0.0.1", port: 0, fs: { allow: [process.cwd(), ...(scratch ? [scratch] : [])] } },
 });
 let browser;
@@ -54,7 +68,10 @@ try {
   for (const file of ["scripts/perf/browser.mjs", "scripts/perf/index.html"]) workloadHash.update(await readFile(file));
   workloadHash.update(await readFile("node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2"));
   const sourceHash = createHash("sha256");
-  for (const file of ["src/index.ts", "src/internal.ts", "src/multiline.ts"]) sourceHash.update(await readFile(resolve(scratch ?? ".", file)));
+  for (const file of ["src/index.ts", "src/internal.ts", "src/multiline.ts", "src/multiline-internal.ts"]) {
+    const filePath = resolve(scratch ?? ".", file);
+    if (existsSync(filePath)) sourceHash.update(await readFile(filePath));
+  }
   const report = {
     schemaVersion: SCHEMA_VERSION,
     package: "inline-measure",

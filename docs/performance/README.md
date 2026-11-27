@@ -6,7 +6,8 @@ Inter is a pinned local `@fontsource/inter` development fixture; requests never
 depend on a font CDN. Install dependencies with `bun install` and install missing
 Playwright Chromium/WebKit browsers with `bunx playwright install chromium webkit`.
 Firefox uses installed Firefox through the `moz-firefox` BiDi channel; pass
-`--bundled-firefox` explicitly to use Playwright's patched browser instead.
+`--bundled-firefox` explicitly to use Playwright's patched browser instead
+(supported by `check:browser`, `perf`, `verify:fonts` and `verify:boxes`).
 
 `bun run verify:browser` runs the correctness, font-loading and inline-box
 checks in all three engines, each stopped with its process tree after 2 minutes
@@ -26,6 +27,7 @@ bun run perf --ref HEAD --browser chromium --output artifacts/perf/baseline.json
 # Capture working source and compare to the matching baseline.
 bun run perf --browser chromium --baseline artifacts/perf/baseline.json --strict --output artifacts/perf/current.json
 bun run perf:report artifacts/perf/baseline.json artifacts/perf/current.json --strict
+bun run perf:check-ratios --strict
 ```
 
 Scripts own their machine leases: correctness uses one slot and timing captures
@@ -119,6 +121,15 @@ retains that complete native proof while reusing a detached pair of probes.
 It removes the remaining regression against 0.3.0 without caching answers or
 loosening accuracy. The delayed-font check also verifies exact multiline
 minimum widths while font loading overlaps an unrelated pending face.
+
+The [0.4.0+ three-engine baseline](2026-11-27-0.4.0-baseline.md) compares
+`v0.3.3` (`07ab4d0`) against the post-0.4.0 implementation across Chromium,
+Firefox (`--bundled-firefox`) and WebKit (`before-0.4.0-*.json` /
+`after-0.4.0-*.json`). `bun run perf:check-ratios` (`scripts/perf/check-ratios.mjs`)
+checks per-scenario and geometric-mean median ratios (`afterMs / beforeMs`)
+rather than absolute wall-clock milliseconds, while still enforcing identical
+workloads and DOM correctness. CI runs `bun run perf:check-ratios --strict`
+alongside the three-engine browser correctness checks in `.github/workflows/check.yml`.
 
 ## Coverage limits
 
