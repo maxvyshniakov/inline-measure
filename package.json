@@ -54,13 +54,13 @@
   "devDependencies": {
     "@fontsource/inter": "5.3.0",
     "@maxvyshniakov/package-kit": "https://registry.npmjs.org/@maxvyshniakov/package-kit/-/package-kit-1.1.0.tgz",
-    "@types/node": "26.6.6",
+    "@types/node": "26.6.11",
     "happy-dom": "21.0.4",
     "oxlint": "1.95.0",
     "playwright": "1.65.1",
     "typescript": "7.0.2",
-    "vite": "8.3.8",
-    "vitest": "5.1.1"
+    "vite": "8.4.0",
+    "vitest": "5.1.2"
   },
   "dependencies": {
     "linebreak": "^2.0.0"
